@@ -87,6 +87,11 @@ public struct WelcomeSheetView: View {
         #if os(iOS)
         .interactiveDismissDisabled()
         #endif
-        .onAppear { isAnimating = true }
+        .task {
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s buffer
+            withAnimation {
+                isAnimating = true
+            }
+        }
     }
 }
