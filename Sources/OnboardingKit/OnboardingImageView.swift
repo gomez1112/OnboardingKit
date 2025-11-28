@@ -10,16 +10,25 @@ import SwiftUI
 struct OnboardingImageView: View {
     let icon: OnboardingIcon
     let tintColor: Color
+    let symbolColor: Color?
     let size: CGFloat
     
+    init(icon: OnboardingIcon, tintColor: Color, symbolColor: Color? = nil, size: CGFloat) {
+        self.icon = icon
+        self.tintColor = tintColor
+        self.symbolColor = symbolColor
+        self.size = size
+    }
+    
     var body: some View {
+        let effectiveColor = symbolColor ?? tintColor
         switch icon {
             case .system(let name):
                 Image(systemName: name)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: size, height: size)
-                    .foregroundStyle(tintColor)
+                    .foregroundStyle(effectiveColor)
             case .asset(let name):
                 Image(name)
                     .resizable()
