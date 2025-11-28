@@ -86,9 +86,11 @@ public struct WelcomeSheetView: View {
         .interactiveDismissDisabled()
 #endif
         .onAppear {
-            // Kick off the animation as soon as the sheet appears
-            withAnimation(.easeOut(duration: 0.6)) {
-                isAnimating = true
+            // Robust animation trigger
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeOut(duration: 0.6)) {
+                    isAnimating = true
+                }
             }
         }
     }

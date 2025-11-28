@@ -14,17 +14,17 @@ struct OnboardingImageView: View {
     
     var body: some View {
         switch icon {
-        case .system(let name):
-            Image(systemName: name)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)
-                .foregroundStyle(tintColor)
-        case .asset(let name):
-            Image(name)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)
+            case .system(let name):
+                Image(systemName: name)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size, height: size)
+                    .foregroundStyle(tintColor)
+            case .asset(let name):
+                Image(name)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size, height: size)
         }
     }
 }

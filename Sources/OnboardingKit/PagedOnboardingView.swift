@@ -19,8 +19,6 @@ public struct PagedOnboardingView: View {
     public var body: some View {
         VStack(spacing: 0) {
             
-            // HIG: "Consider making it optional"
-            // Skip Button Area
             HStack {
                 Spacer()
                 Button(action: onFinish) {
@@ -32,7 +30,6 @@ public struct PagedOnboardingView: View {
                 }
                 .buttonStyle(.plain)
                 .opacity(isAnimating ? 1 : 0)
-                .animation(.easeIn(duration: 0.3).delay(0.5), value: isAnimating)
             }
             .padding(.top, 20)
             .padding(.trailing, 20)
@@ -71,15 +68,13 @@ public struct PagedOnboardingView: View {
                     .tag(index)
                 }
             }
-            #if os(iOS)
+#if os(iOS)
             .tabViewStyle(.page(indexDisplayMode: .never))
-            #else
+#else
             .tabViewStyle(.page(indexDisplayMode: .never))
-            #endif
+#endif
             
-            // Footer
             VStack(spacing: 20) {
-                // Indicators
                 HStack(spacing: 8) {
                     ForEach(0..<pages.count, id: \.self) { index in
                         Circle()
@@ -90,8 +85,6 @@ public struct PagedOnboardingView: View {
                     }
                 }
                 
-                // HIG: "Integrate the permission request into your onboarding flow"
-                // Dynamic Button Logic
                 Button(action: {
                     handleNextButton()
                 }) {
@@ -112,13 +105,15 @@ public struct PagedOnboardingView: View {
             .padding(.horizontal, 40)
             .padding(.bottom, 40)
         }
-        #if os(iOS)
+#if os(iOS)
         .interactiveDismissDisabled()
-        #endif
-        .task {
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s buffer
-            withAnimation {
-                isAnimating = true
+#endif
+        .onAppear {
+            // Robust animation trigger
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation {
+                    isAnimating = true
+                }
             }
         }
     }
@@ -133,14 +128,10 @@ public struct PagedOnboardingView: View {
     
     private func handleNextButton() {
         let page = pages[currentPage]
-        
-        // 1. If there is a custom action (Permission Request), run it.
         if let action = page.action {
             action()
-            // After action, we usually move to next page automatically
             advancePage()
         } else {
-            // 2. Standard navigation
             advancePage()
         }
     }

@@ -10,7 +10,10 @@ import SwiftUI
 public struct OnboardingWrapper<Content: View>: View {
     @AppStorage("com.onboardingkit.lastSeenVersion") private var lastSeenVersion: String = ""
     @State private var showOnboarding = false
-    @State private var onboardingType: OnboardingType = .none
+    
+    // CRITICAL FIX: Default to .firstLaunch instead of .none.
+    // This ensures the sheet is never empty/blank, even before the check runs.
+    @State private var onboardingType: OnboardingType = .firstLaunch
     
     let currentVersion: String
     let appName: String
@@ -45,21 +48,22 @@ public struct OnboardingWrapper<Content: View>: View {
             .sheet(isPresented: $showOnboarding) {
                 Group {
                     switch onboardingType {
-                    case .firstLaunch:
-                        PagedOnboardingView(appName: appName, pages: pages, tintColor: tintColor) {
-                            completeOnboarding()
-                        }
-                    case .whatsNew:
-                        WelcomeSheetView(appName: appName, features: features, tintColor: tintColor) {
-                            completeOnboarding()
-                        }
-                    case .none:
-                        EmptyView()
+                        case .firstLaunch:
+                            PagedOnboardingView(appName: appName, pages: pages, tintColor: tintColor) {
+                                completeOnboarding()
+                            }
+                        case .whatsNew:
+                            WelcomeSheetView(appName: appName, features: features, tintColor: tintColor) {
+                                completeOnboarding()
+                            }
+                        case .none:
+                            // Fallback: If for some reason we end up here, show a loader, NEVER an EmptyView
+                            ProgressView()
                     }
                 }
-                #if os(macOS)
+#if os(macOS)
                 .frame(width: 500, height: 600)
-                #endif
+#endif
             }
     }
     
