@@ -51,6 +51,9 @@ public struct WelcomeSheetView: View {
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
+                            .padding() // Add padding for card look
+                            .background(feature.backgroundColor) // Apply background
+                            .cornerRadius(12) // Round corners
                             .opacity(isAnimating ? 1 : 0)
                             .offset(x: isAnimating ? 0 : 20)
                             .animation(.easeOut(duration: 0.5).delay(0.2 + (Double(index) * 0.1)), value: isAnimating)
@@ -86,7 +89,6 @@ public struct WelcomeSheetView: View {
         .interactiveDismissDisabled()
 #endif
         .onAppear {
-            // Robust animation trigger
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 withAnimation(.easeOut(duration: 0.6)) {
                     isAnimating = true

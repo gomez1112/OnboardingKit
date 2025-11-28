@@ -17,23 +17,10 @@ public struct PagedOnboardingView: View {
     @State private var isAnimating = false
     
     public var body: some View {
-        VStack(spacing: 0) {
+        // Changed to ZStack so the TabView can fill the screen behind controls
+        ZStack {
             
-            HStack {
-                Spacer()
-                Button(action: onFinish) {
-                    Text("Skip")
-                        .font(.subheadline)
-                        .foregroundStyle(tintColor)
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                }
-                .buttonStyle(.plain)
-                .opacity(isAnimating ? 1 : 0)
-            }
-            .padding(.top, 20)
-            .padding(.trailing, 20)
-            
+            // 1. Background Layer (Pages)
             TabView(selection: $currentPage) {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
                     VStack(spacing: 24) {
@@ -66,6 +53,9 @@ public struct PagedOnboardingView: View {
                         Spacer()
                     }
                     .tag(index)
+                    // Full screen configuration
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(page.backgroundColor)
                 }
             }
 #if os(iOS)
@@ -73,43 +63,65 @@ public struct PagedOnboardingView: View {
 #else
             .tabViewStyle(.page(indexDisplayMode: .never))
 #endif
+            .ignoresSafeArea() // Ensure background colors fill edges
             
-            VStack(spacing: 20) {
-                HStack(spacing: 8) {
-                    ForEach(0..<pages.count, id: \.self) { index in
-                        Circle()
-                            .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(currentPage == index ? 1.2 : 1.0)
-                            .animation(.spring(), value: currentPage)
+            // 2. Foreground Layer (Controls)
+            VStack {
+                // Top: Skip Button
+                HStack {
+                    Spacer()
+                    Button(action: onFinish) {
+                        Text("Skip")
+                            .font(.subheadline)
+                            .foregroundStyle(tintColor)
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
                     }
+                    .buttonStyle(.plain)
+                    .opacity(isAnimating ? 1 : 0)
                 }
+                .padding(.top, 50) // Adjust for safe area since we ignored it
+                .padding(.trailing, 20)
                 
-                Button(action: {
-                    handleNextButton()
-                }) {
-                    Text(getButtonTitle())
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: 500)
-                        .frame(height: 50)
-                        .background(tintColor)
-                        .cornerRadius(14)
+                Spacer()
+                
+                // Bottom: Indicators & Button
+                VStack(spacing: 20) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<pages.count, id: \.self) { index in
+                            Circle()
+                                .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(currentPage == index ? 1.2 : 1.0)
+                                .animation(.spring(), value: currentPage)
+                        }
+                    }
+                    
+                    Button(action: {
+                        handleNextButton()
+                    }) {
+                        Text(getButtonTitle())
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: 500)
+                            .frame(height: 50)
+                            .background(tintColor)
+                            .cornerRadius(14)
+                    }
+                    .buttonStyle(.plain)
+                    .offset(y: isAnimating ? 0 : 50)
+                    .opacity(isAnimating ? 1 : 0)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.4), value: isAnimating)
                 }
-                .buttonStyle(.plain)
-                .offset(y: isAnimating ? 0 : 50)
-                .opacity(isAnimating ? 1 : 0)
-                .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.4), value: isAnimating)
+                .padding(.horizontal, 40)
+                .padding(.bottom, 50) // Adjust for safe area
             }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
         }
 #if os(iOS)
         .interactiveDismissDisabled()
 #endif
         .onAppear {
-            // Robust animation trigger
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 withAnimation {
                     isAnimating = true
