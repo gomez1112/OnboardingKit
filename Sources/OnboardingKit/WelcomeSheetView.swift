@@ -25,7 +25,6 @@ public struct WelcomeSheetView: View {
                             .multilineTextAlignment(.center)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : -20)
-                            .animation(.easeOut(duration: 0.6), value: isAnimating)
                         
                         Text(appName)
                             .font(.system(size: 30, weight: .bold))
@@ -33,7 +32,6 @@ public struct WelcomeSheetView: View {
                             .multilineTextAlignment(.center)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : -20)
-                            .animation(.easeOut(duration: 0.6).delay(0.1), value: isAnimating)
                     }
                     .padding(.top, 50)
                     .padding(.bottom, 50)
@@ -84,12 +82,12 @@ public struct WelcomeSheetView: View {
             }
             .background(.regularMaterial)
         }
-        #if os(iOS)
+#if os(iOS)
         .interactiveDismissDisabled()
-        #endif
-        .task {
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s buffer
-            withAnimation {
+#endif
+        .onAppear {
+            // Kick off the animation as soon as the sheet appears
+            withAnimation(.easeOut(duration: 0.6)) {
                 isAnimating = true
             }
         }
