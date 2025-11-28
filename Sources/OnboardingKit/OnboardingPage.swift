@@ -13,32 +13,36 @@ public struct OnboardingPage: Identifiable, Equatable {
     public let description: String
     public let icon: OnboardingIcon
     public let backgroundColor: Color // New Property
+    public let iconColor: Color? // New Property
     public let actionButtonTitle: String?
     public let action: (() -> Void)?
     
-    public init(title: String, description: String, systemImage: String, backgroundColor: Color = .clear) {
+    public init(title: String, description: String, systemImage: String, backgroundColor: Color = .clear, iconColor: Color? = nil) {
         self.title = title
         self.description = description
         self.icon = .system(systemImage)
         self.backgroundColor = backgroundColor
+        self.iconColor = iconColor
         self.actionButtonTitle = nil
         self.action = nil
     }
     
-    public init(title: String, description: String, image: String, backgroundColor: Color = .clear) {
+    public init(title: String, description: String, image: String, backgroundColor: Color = .clear, iconColor: Color? = nil) {
         self.title = title
         self.description = description
         self.icon = .asset(image)
         self.backgroundColor = backgroundColor
+        self.iconColor = iconColor
         self.actionButtonTitle = nil
         self.action = nil
     }
     
-    public init(title: String, description: String, systemImage: String, backgroundColor: Color = .clear, actionTitle: String, action: @escaping () -> Void) {
+    public init(title: String, description: String, systemImage: String, backgroundColor: Color = .clear, iconColor: Color? = nil, actionTitle: String, action: @escaping () -> Void) {
         self.title = title
         self.description = description
         self.icon = .system(systemImage)
         self.backgroundColor = backgroundColor
+        self.iconColor = iconColor
         self.actionButtonTitle = actionTitle
         self.action = action
     }

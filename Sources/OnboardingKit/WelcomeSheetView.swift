@@ -39,7 +39,7 @@ public struct WelcomeSheetView: View {
                     VStack(alignment: .leading, spacing: 30) {
                         ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
                             HStack(alignment: .top, spacing: 16) {
-                                OnboardingImageView(icon: feature.icon, tintColor: tintColor, size: 40)
+                                OnboardingImageView(icon: feature.icon, tintColor: tintColor, symbolColor: feature.iconColor, size: 40)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(feature.title)
                                         .font(.headline)

@@ -26,7 +26,7 @@ public struct PagedOnboardingView: View {
                     VStack(spacing: 24) {
                         Spacer()
                         
-                        OnboardingImageView(icon: page.icon, tintColor: tintColor, size: 100)
+                        OnboardingImageView(icon: page.icon, tintColor: tintColor, symbolColor: page.iconColor, size: 100)
                             .scaleEffect(isAnimating ? 1 : 0.5)
                             .opacity(isAnimating ? 1 : 0)
                             .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1), value: isAnimating)
