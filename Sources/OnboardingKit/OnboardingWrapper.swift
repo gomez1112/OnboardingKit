@@ -8,7 +8,7 @@
 import SwiftUI
 
 public struct OnboardingWrapper<Content: View>: View {
-    @AppStorage("com.onboardingkit.lastSeenVersion") private var lastSeenVersion: String = ""
+    @AppStorage(OnboardingManager.storageKey) private var lastSeenVersion: String = ""
     @State private var showOnboarding = false
     @State private var onboardingType: OnboardingType = .firstLaunch
     
@@ -80,8 +80,5 @@ public struct OnboardingWrapper<Content: View>: View {
             showOnboarding = false
             lastSeenVersion = currentVersion
         }
-    }
-    public static func resetOnboarding() {
-        UserDefaults.standard.removeObject(forKey: "com.onboardingkit.lastSeenVersion")
     }
 }
