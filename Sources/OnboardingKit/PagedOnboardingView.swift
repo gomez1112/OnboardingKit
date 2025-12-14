@@ -17,9 +17,7 @@ public struct PagedOnboardingView: View {
     @State private var isAnimating = false
     
     public var body: some View {
-        // Changed to ZStack so the TabView can fill the screen behind controls
         ZStack {
-            
             // 1. Background Layer (Pages)
             TabView(selection: $currentPage) {
                 ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
@@ -53,7 +51,6 @@ public struct PagedOnboardingView: View {
                         Spacer()
                     }
                     .tag(index)
-                    // Full screen configuration
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(page.backgroundColor)
                 }
@@ -63,7 +60,7 @@ public struct PagedOnboardingView: View {
 #else
             .tabViewStyle(.page(indexDisplayMode: .never))
 #endif
-            .ignoresSafeArea() // Ensure background colors fill edges
+            .ignoresSafeArea()
             
             // 2. Foreground Layer (Controls)
             VStack {
@@ -80,7 +77,7 @@ public struct PagedOnboardingView: View {
                     .buttonStyle(.plain)
                     .opacity(isAnimating ? 1 : 0)
                 }
-                .padding(.top, 50) // Adjust for safe area since we ignored it
+                .padding(.top, 50)
                 .padding(.trailing, 20)
                 
                 Spacer()
@@ -115,14 +112,16 @@ public struct PagedOnboardingView: View {
                     .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.4), value: isAnimating)
                 }
                 .padding(.horizontal, 40)
-                .padding(.bottom, 50) // Adjust for safe area
+                .padding(.bottom, 50)
             }
         }
 #if os(iOS)
         .interactiveDismissDisabled()
 #endif
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Modern Task-based delay
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.1))
                 withAnimation {
                     isAnimating = true
                 }

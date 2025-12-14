@@ -7,17 +7,25 @@
 
 import SwiftUI
 
-public struct OnboardingPage: Identifiable, Equatable {
+public struct OnboardingPage: Identifiable, Equatable, Sendable {
     public let id = UUID()
     public let title: String
     public let description: String
     public let icon: OnboardingIcon
-    public let backgroundColor: Color // New Property
-    public let iconColor: Color? // New Property
+    public let backgroundColor: Color
+    public let iconColor: Color?
     public let actionButtonTitle: String?
-    public let action: (() -> Void)?
     
-    public init(title: String, description: String, systemImage: String, backgroundColor: Color = .clear, iconColor: Color? = nil) {
+    // Actions in UI models should generally be Sendable
+    public let action: (@Sendable () -> Void)?
+    
+    public init(
+        title: String,
+        description: String,
+        systemImage: String,
+        backgroundColor: Color = .clear,
+        iconColor: Color? = nil
+    ) {
         self.title = title
         self.description = description
         self.icon = .system(systemImage)
@@ -27,7 +35,13 @@ public struct OnboardingPage: Identifiable, Equatable {
         self.action = nil
     }
     
-    public init(title: String, description: String, image: String, backgroundColor: Color = .clear, iconColor: Color? = nil) {
+    public init(
+        title: String,
+        description: String,
+        image: String,
+        backgroundColor: Color = .clear,
+        iconColor: Color? = nil
+    ) {
         self.title = title
         self.description = description
         self.icon = .asset(image)
@@ -37,7 +51,15 @@ public struct OnboardingPage: Identifiable, Equatable {
         self.action = nil
     }
     
-    public init(title: String, description: String, systemImage: String, backgroundColor: Color = .clear, iconColor: Color? = nil, actionTitle: String, action: @escaping () -> Void) {
+    public init(
+        title: String,
+        description: String,
+        systemImage: String,
+        backgroundColor: Color = .clear,
+        iconColor: Color? = nil,
+        actionTitle: String,
+        action: @escaping @Sendable () -> Void
+    ) {
         self.title = title
         self.description = description
         self.icon = .system(systemImage)

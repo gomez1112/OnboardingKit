@@ -10,9 +10,6 @@ import SwiftUI
 public struct OnboardingWrapper<Content: View>: View {
     @AppStorage("com.onboardingkit.lastSeenVersion") private var lastSeenVersion: String = ""
     @State private var showOnboarding = false
-    
-    // CRITICAL FIX: Default to .firstLaunch instead of .none.
-    // This ensures the sheet is never empty/blank, even before the check runs.
     @State private var onboardingType: OnboardingType = .firstLaunch
     
     let currentVersion: String
@@ -57,7 +54,6 @@ public struct OnboardingWrapper<Content: View>: View {
                                 completeOnboarding()
                             }
                         case .none:
-                            // Fallback: If for some reason we end up here, show a loader, NEVER an EmptyView
                             ProgressView()
                     }
                 }

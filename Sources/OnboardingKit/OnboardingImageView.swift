@@ -37,14 +37,32 @@ struct OnboardingImageView: View {
         }
     }
 }
-// Helper to make Color(uiColor) work on macOS
+
+// MARK: - Cross Platform Color Shim
+// Fixes the issue where `UIColor` is not found on macOS.
+
 #if os(macOS)
-extension Color {
-    static let secondarySystemBackground = Color(NSColor.windowBackgroundColor)
-    static let systemBackground = Color(NSColor.windowBackgroundColor)
-}
-extension UIColor {
-    static let systemBackground = NSColor.windowBackgroundColor
-    static let secondarySystemBackground = NSColor.windowBackgroundColor
-}
+import AppKit
+private typealias PlatformColor = NSColor
+#else
+import UIKit
+private typealias PlatformColor = UIColor
 #endif
+
+extension Color {
+    static var obk_secondarySystemBackground: Color {
+#if os(macOS)
+        Color(PlatformColor.windowBackgroundColor)
+#else
+        Color(PlatformColor.secondarySystemBackground)
+#endif
+    }
+    
+    static var obk_systemBackground: Color {
+#if os(macOS)
+        Color(PlatformColor.windowBackgroundColor)
+#else
+        Color(PlatformColor.systemBackground)
+#endif
+    }
+}

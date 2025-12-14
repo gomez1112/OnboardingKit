@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-public struct FeatureItem: Identifiable, Equatable {
+public struct FeatureItem: Identifiable, Equatable, Sendable {
     public let id = UUID()
     public let title: String
     public let description: String

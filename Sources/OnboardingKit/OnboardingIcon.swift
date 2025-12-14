@@ -6,7 +6,7 @@
 //
 
 /// Internal wrapper to handle both image types
-public enum OnboardingIcon: Equatable {
+public enum OnboardingIcon: Equatable, Sendable {
     case system(String)
     case asset(String)
 }
