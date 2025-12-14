@@ -11,147 +11,186 @@ public struct PagedOnboardingView: View {
     let appName: String
     let pages: [OnboardingPage]
     let tintColor: Color
-    let onFinish: () -> Void
+    let onFinish: @MainActor () -> Void
     
     @State private var currentPage = 0
-    @State private var isAnimating = false
+    
+    public init(
+        appName: String,
+        pages: [OnboardingPage],
+        tintColor: Color = .blue,
+        onFinish: @escaping @MainActor () -> Void
+    ) {
+        self.appName = appName
+        self.pages = pages
+        self.tintColor = tintColor
+        self.onFinish = onFinish
+    }
     
     public var body: some View {
         ZStack {
-            // 1. Background Layer (Pages)
-            TabView(selection: $currentPage) {
-                ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
-                    VStack(spacing: 24) {
-                        Spacer()
-                        
-                        OnboardingImageView(icon: page.icon, tintColor: tintColor, symbolColor: page.iconColor, size: 100)
-                            .scaleEffect(isAnimating ? 1 : 0.5)
-                            .opacity(isAnimating ? 1 : 0)
-                            .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1), value: isAnimating)
-                            .id("image-\(index)")
-                        
-                        Text(page.title)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .multilineTextAlignment(.center)
-                            .offset(y: isAnimating ? 0 : 20)
-                            .opacity(isAnimating ? 1 : 0)
-                            .animation(.easeOut(duration: 0.5).delay(0.2), value: isAnimating)
-                        
-                        Text(page.description)
-                            .font(.body)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 30)
-                            .frame(maxWidth: 450)
-                            .offset(y: isAnimating ? 0 : 20)
-                            .opacity(isAnimating ? 1 : 0)
-                            .animation(.easeOut(duration: 0.5).delay(0.3), value: isAnimating)
-                        
-                        Spacer()
-                    }
-                    .tag(index)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(page.backgroundColor)
-                }
-            }
-#if os(iOS)
-            .tabViewStyle(.page(indexDisplayMode: .never))
-#else
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            // Background (Pages)
+#if os(iOS) || os(tvOS) || os(watchOS)
+            iOSPageView
+#elseif os(macOS)
+            macPageView
 #endif
-            .ignoresSafeArea()
-            
-            // 2. Foreground Layer (Controls)
-            VStack {
-                // Top: Skip Button
-                HStack {
-                    Spacer()
-                    Button(action: onFinish) {
-                        Text("Skip")
-                            .font(.subheadline)
-                            .foregroundStyle(tintColor)
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.plain)
-                    .opacity(isAnimating ? 1 : 0)
-                }
-                .padding(.top, 50)
-                .padding(.trailing, 20)
-                
-                Spacer()
-                
-                // Bottom: Indicators & Button
-                VStack(spacing: 20) {
-                    HStack(spacing: 8) {
-                        ForEach(0..<pages.count, id: \.self) { index in
-                            Circle()
-                                .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
-                                .frame(width: 8, height: 8)
-                                .scaleEffect(currentPage == index ? 1.2 : 1.0)
-                                .animation(.spring(), value: currentPage)
-                        }
-                    }
-                    
-                    Button(action: {
-                        handleNextButton()
-                    }) {
-                        Text(getButtonTitle())
-                            .font(.headline)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: 500)
-                            .frame(height: 50)
-                            .background(tintColor)
-                            .cornerRadius(14)
-                    }
-                    .buttonStyle(.plain)
-                    .offset(y: isAnimating ? 0 : 50)
-                    .opacity(isAnimating ? 1 : 0)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.4), value: isAnimating)
-                }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 50)
-            }
         }
+        .ignoresSafeArea()
+        
+        // Top controls (no hard-coded safe-area padding)
+        .safeAreaInset(edge: .top) {
+            HStack {
+                Spacer()
+                if shouldShowSkip {
+                    Button("Skip") { onFinish() }
+                        .font(.subheadline)
+                        .foregroundStyle(tintColor)
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                        .accessibilityLabel("Skip onboarding")
+                }
+            }
+            .padding(.trailing, 6)
+            .padding(.top, 6)
+        }
+        
+        // Bottom controls (no hard-coded safe-area padding)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 16) {
+                // Page indicators
+                HStack(spacing: 8) {
+                    ForEach(pages.indices, id: \.self) { index in
+                        Circle()
+                            .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(currentPage == index ? 1.2 : 1.0)
+                            .animation(.spring(), value: currentPage)
+                            .accessibilityHidden(true)
+                    }
+                }
+                
+                // Primary button
+                Button(action: handleNextButton) {
+                    Text(buttonTitle)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: 520)
+                        .frame(height: 52)
+                        .background(tintColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .shadow(radius: 5) // system default
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(buttonTitle)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 18)
+            .background(.regularMaterial)
+        }
+        
 #if os(iOS)
         .interactiveDismissDisabled()
 #endif
-        .onAppear {
-            // Modern Task-based delay
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(0.1))
-                withAnimation {
-                    isAnimating = true
-                }
-            }
-        }
     }
     
-    private func getButtonTitle() -> String {
+    private var shouldShowSkip: Bool {
+        pages.count > 1 && currentPage < pages.count - 1
+    }
+    
+    private var buttonTitle: String {
         let page = pages[currentPage]
-        if let customTitle = page.actionButtonTitle {
-            return customTitle
-        }
+        if let custom = page.actionButtonTitle { return custom }
         return currentPage == pages.count - 1 ? "Get Started" : "Next"
     }
     
+    @MainActor
     private func handleNextButton() {
         let page = pages[currentPage]
-        if let action = page.action {
-            action()
-            advancePage()
+        page.action?()
+        
+        if currentPage < pages.count - 1 {
+            withAnimation(.snappy) { currentPage += 1 }
         } else {
-            advancePage()
+            onFinish()
         }
     }
     
-    private func advancePage() {
-        if currentPage < pages.count - 1 {
-            withAnimation { currentPage += 1 }
-        } else {
-            onFinish()
+    // MARK: Platform-specific page containers
+    
+    private var iOSPageView: some View {
+        TabView(selection: $currentPage) {
+            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+                PageView(page: page, tintColor: tintColor)
+                    .tag(index)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+    }
+    
+    private var macPageView: some View {
+        ZStack {
+            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+                if currentPage == index {
+                    PageView(page: page, tintColor: tintColor)
+                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                }
+            }
+        }
+        .animation(.default, value: currentPage)
+    }
+}
+private struct PageView: View {
+    let page: OnboardingPage
+    let tintColor: Color
+    
+    @State private var animate = false
+    
+    var body: some View {
+        ZStack {
+            page.backgroundColor
+            
+            VStack(spacing: 24) {
+                Spacer()
+                
+                OnboardingImageView(
+                    icon: page.icon,
+                    tintColor: tintColor,
+                    symbolColor: page.iconColor,
+                    size: 100
+                )
+                .scaleEffect(animate ? 1 : 0.6)
+                .opacity(animate ? 1 : 0)
+                .animation(.spring(response: 0.6, dampingFraction: 0.65).delay(0.05), value: animate)
+                
+                Text(page.title)
+                    .font(.largeTitle.weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .offset(y: animate ? 0 : 18)
+                    .opacity(animate ? 1 : 0)
+                    .animation(.easeOut(duration: 0.5).delay(0.12), value: animate)
+                
+                Text(page.description)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 30)
+                    .frame(maxWidth: 520)
+                    .offset(y: animate ? 0 : 18)
+                    .opacity(animate ? 1 : 0)
+                    .animation(.easeOut(duration: 0.5).delay(0.20), value: animate)
+                
+                Spacer()
+            }
+            .padding(.top, 10)
+        }
+        .ignoresSafeArea()
+        .onAppear {
+            // Re-trigger animation when the page becomes visible
+            animate = false
+            DispatchQueue.main.async { animate = true }
         }
     }
 }
