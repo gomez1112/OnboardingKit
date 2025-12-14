@@ -81,4 +81,7 @@ public struct OnboardingWrapper<Content: View>: View {
             lastSeenVersion = currentVersion
         }
     }
+    public static func resetOnboarding() {
+        UserDefaults.standard.removeObject(forKey: "com.onboardingkit.lastSeenVersion")
+    }
 }
