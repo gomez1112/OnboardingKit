@@ -102,7 +102,7 @@ public struct OnboardingAnimationConfiguration: Equatable, Sendable {
 // MARK: - Haptics
 
 extension OnboardingAnimationConfiguration {
-    func firePrimaryHapticIfNeeded() {
+    @MainActor func firePrimaryHapticIfNeeded() {
         guard enableHaptics else { return }
         #if os(iOS) || os(tvOS)
         let generator = UIImpactFeedbackGenerator(style: .light)
