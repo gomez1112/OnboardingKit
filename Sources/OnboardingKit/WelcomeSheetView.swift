@@ -14,6 +14,8 @@ public struct WelcomeSheetView: View {
     let tintColor: Color
     let onContinue: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var isContinueFocused: Bool
     @State private var isAnimating = false
 
     /// Creates a "What's New" sheet.
@@ -36,13 +38,13 @@ public struct WelcomeSheetView: View {
                 VStack(spacing: 0) {
                     VStack(spacing: 10) {
                         Text("What's New in")
-                            .font(.system(size: 30, weight: .bold))
+                            .font(.title.bold())
                             .multilineTextAlignment(.center)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : -20)
-                        
+
                         Text(appName)
-                            .font(.system(size: 30, weight: .bold))
+                            .font(.largeTitle.bold())
                             .foregroundStyle(tintColor)
                             .multilineTextAlignment(.center)
                             .opacity(isAnimating ? 1 : 0)
@@ -50,11 +52,16 @@ public struct WelcomeSheetView: View {
                     }
                     .padding(.top, 50)
                     .padding(.bottom, 50)
-                    
+
                     VStack(alignment: .leading, spacing: 30) {
                         ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
                             HStack(alignment: .top, spacing: 16) {
-                                OnboardingImageView(icon: feature.icon, tintColor: tintColor, symbolColor: feature.iconColor, size: 40)
+                                OnboardingImageView(
+                                    icon: feature.icon,
+                                    tintColor: tintColor,
+                                    symbolColor: feature.iconColor,
+                                    size: 40
+                                )
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(feature.title)
                                         .font(.headline)
@@ -71,7 +78,12 @@ public struct WelcomeSheetView: View {
                             .cornerRadius(12)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(x: isAnimating ? 0 : 20)
-                            .animation(.easeOut(duration: 0.5).delay(0.2 + (Double(index) * 0.1)), value: isAnimating)
+                            .animation(
+                                reduceMotion ? nil : .easeOut(duration: 0.5).delay(0.2 + (Double(index) * 0.1)),
+                                value: isAnimating
+                            )
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel("\(feature.title). \(feature.description)")
                         }
                     }
                     .frame(maxWidth: 500)
@@ -87,16 +99,20 @@ public struct WelcomeSheetView: View {
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
                         .frame(maxWidth: 500)
-                        .frame(height: 50)
+                        .frame(minHeight: 48)
                         .background(tintColor)
                         .cornerRadius(14)
                 }
                 .buttonStyle(.plain)
                 .opacity(isAnimating ? 1 : 0)
                 .offset(y: isAnimating ? 0 : 50)
-                .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.6), value: isAnimating)
+                .animation(
+                    reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.7).delay(0.6),
+                    value: isAnimating
+                )
                 .padding(.horizontal, 40)
                 .padding(.vertical, 30)
+                .defaultFocus($isContinueFocused)
             }
             .background(.regularMaterial)
         }
@@ -106,10 +122,15 @@ public struct WelcomeSheetView: View {
         .onAppear {
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(0.1))
-                withAnimation(.easeOut(duration: 0.6)) {
+                if reduceMotion {
                     isAnimating = true
+                } else {
+                    withAnimation(.easeOut(duration: 0.6)) {
+                        isAnimating = true
+                    }
                 }
             }
         }
+        .onAppear { isContinueFocused = true }
     }
 }
