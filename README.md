@@ -337,16 +337,3 @@ Use it in layers:
 3. Use **action pages** only when you need per-page actions
 4. Call `resetOnboarding()` for debugging, QA, and demo flows
 
----
-
-## Package Notes
-
-You mentioned a stray template file (“The Swift Programming Language…”).  
-That file typically appears when Xcode creates a placeholder documentation resource. It’s safe to delete from your repo if you don’t need it. (Prefer adding a real `README.md` + `LICENSE` instead.)
-
----
-
-## License
-
-MIT (or your preferred license). Add a `LICENSE` file to your repository to make it explicit.
-
