@@ -103,6 +103,15 @@ OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen vers
 
 ---
 
+## Accessibility Checklist
+- **VoiceOver labels**: Supply descriptive `title` and `description` strings so icons and feature rows announce useful context via `accessibilityLabel`.
+- **Dynamic Type**: Preview onboarding at larger content sizes to confirm headers, descriptions, and buttons wrap without clipping. Prefer relative text styles (e.g., `.title`, `.headline`) over fixed point sizes.
+- **Reduce Motion**: Verify animations calm when `accessibilityReduceMotion` is enabled—page transitions, icon scaling, and list slides should switch to static state changes.
+- **Focus/Keyboard navigation**: Ensure the primary and skip/continue buttons gain initial focus when views appear and that non-interactive elements (like page indicators) stay unfocusable.
+- **Regressions**: Re-run this checklist whenever onboarding UI changes, especially when adding new imagery or interactive controls.
+
+---
+
 ## FAQ
 **How does OnboardingKit decide what to show?**
 

@@ -12,14 +12,22 @@ struct OnboardingImageView: View {
     let tintColor: Color
     let symbolColor: Color?
     let size: CGFloat
-    
-    init(icon: OnboardingIcon, tintColor: Color, symbolColor: Color? = nil, size: CGFloat) {
+    let accessibilityLabel: String?
+
+    init(
+        icon: OnboardingIcon,
+        tintColor: Color,
+        symbolColor: Color? = nil,
+        size: CGFloat,
+        accessibilityLabel: String? = nil
+    ) {
         self.icon = icon
         self.tintColor = tintColor
         self.symbolColor = symbolColor
         self.size = size
+        self.accessibilityLabel = accessibilityLabel
     }
-    
+
     var body: some View {
         let effectiveColor = symbolColor ?? tintColor
         switch icon {
@@ -35,6 +43,9 @@ struct OnboardingImageView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: size, height: size)
         }
+        .accessibilityLabel(accessibilityLabel ?? "")
+        .accessibilityAddTraits(.isImage)
+        .accessibilityHidden(accessibilityLabel == nil)
     }
 }
 

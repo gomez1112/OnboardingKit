@@ -13,7 +13,10 @@ public struct PagedOnboardingView: View {
     let pages: [OnboardingPage]
     let tintColor: Color
     let onFinish: @MainActor () -> Void
-    
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var isPrimaryButtonFocused: Bool
+    @FocusState private var isSkipButtonFocused: Bool
     @State private var currentPage = 0
     
     /// Creates a paged onboarding view.
@@ -59,6 +62,7 @@ public struct PagedOnboardingView: View {
                         .padding(.vertical, 10)
                         .contentShape(Rectangle())
                         .accessibilityLabel("Skip onboarding")
+                        .focused($isSkipButtonFocused)
                 }
             }
             .padding(.trailing, 6)
@@ -75,7 +79,7 @@ public struct PagedOnboardingView: View {
                             .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
                             .frame(width: 8, height: 8)
                             .scaleEffect(currentPage == index ? 1.2 : 1.0)
-                            .animation(.spring(), value: currentPage)
+                            .animation(reduceMotion ? nil : .spring(), value: currentPage)
                             .accessibilityHidden(true)
                     }
                 }
@@ -86,13 +90,14 @@ public struct PagedOnboardingView: View {
                         .font(.headline.weight(.bold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: 520)
-                        .frame(height: 52)
+                        .frame(minHeight: 48)
                         .background(tintColor)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .shadow(radius: 5) // system default
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(buttonTitle)
+                .defaultFocus($isPrimaryButtonFocused)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 18)
@@ -102,6 +107,7 @@ public struct PagedOnboardingView: View {
 #if os(iOS)
         .interactiveDismissDisabled()
 #endif
+        .onAppear { isPrimaryButtonFocused = true }
     }
     
     private var shouldShowSkip: Bool {
@@ -118,9 +124,13 @@ public struct PagedOnboardingView: View {
     private func handleNextButton() {
         let page = pages[currentPage]
         page.action?()
-        
+
         if currentPage < pages.count - 1 {
-            withAnimation(.snappy) { currentPage += 1 }
+            if reduceMotion {
+                currentPage += 1
+            } else {
+                withAnimation(.snappy) { currentPage += 1 }
+            }
         } else {
             onFinish()
         }
@@ -143,17 +153,18 @@ public struct PagedOnboardingView: View {
             ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
                 if currentPage == index {
                     PageView(page: page, tintColor: tintColor)
-                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                        .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .trailing)))
                 }
             }
         }
-        .animation(.default, value: currentPage)
+        .animation(reduceMotion ? nil : .default, value: currentPage)
     }
 }
 private struct PageView: View {
     let page: OnboardingPage
     let tintColor: Color
-    
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var animate = false
     
     var body: some View {
@@ -162,24 +173,26 @@ private struct PageView: View {
             
             VStack(spacing: 24) {
                 Spacer()
-                
+
                 OnboardingImageView(
                     icon: page.icon,
                     tintColor: tintColor,
                     symbolColor: page.iconColor,
-                    size: 100
+                    size: 100,
+                    accessibilityLabel: page.title
                 )
                 .scaleEffect(animate ? 1 : 0.6)
                 .opacity(animate ? 1 : 0)
-                .animation(.spring(response: 0.6, dampingFraction: 0.65).delay(0.05), value: animate)
-                
+                .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.65).delay(0.05), value: animate)
+
                 Text(page.title)
                     .font(.largeTitle.weight(.bold))
                     .multilineTextAlignment(.center)
                     .offset(y: animate ? 0 : 18)
                     .opacity(animate ? 1 : 0)
-                    .animation(.easeOut(duration: 0.5).delay(0.12), value: animate)
-                
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.5).delay(0.12), value: animate)
+                    .accessibilityAddTraits(.isHeader)
+
                 Text(page.description)
                     .font(.body)
                     .multilineTextAlignment(.center)
@@ -188,11 +201,13 @@ private struct PageView: View {
                     .frame(maxWidth: 520)
                     .offset(y: animate ? 0 : 18)
                     .opacity(animate ? 1 : 0)
-                    .animation(.easeOut(duration: 0.5).delay(0.20), value: animate)
-                
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.5).delay(0.20), value: animate)
+
                 Spacer()
             }
             .padding(.top, 10)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(page.title). \(page.description)")
         }
         .ignoresSafeArea()
         .onAppear {
