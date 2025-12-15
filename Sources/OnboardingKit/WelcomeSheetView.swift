@@ -12,6 +12,7 @@ public struct WelcomeSheetView: View {
     let appName: String
     let features: [FeatureItem]
     let tintColor: Color
+    let animationConfiguration: OnboardingAnimationConfiguration
     let onContinue: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -24,10 +25,17 @@ public struct WelcomeSheetView: View {
     ///   - features: Feature rows to present.
     ///   - tintColor: Accent color used for emphasis and the primary button.
     ///   - onContinue: Closure executed when the user taps **Continue**.
-    public init(appName: String, features: [FeatureItem], tintColor: Color = .blue, onContinue: @escaping () -> Void) {
+    public init(
+        appName: String,
+        features: [FeatureItem],
+        tintColor: Color = .blue,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
+        onContinue: @escaping () -> Void
+    ) {
         self.appName = appName
         self.features = features
         self.tintColor = tintColor
+        self.animationConfiguration = animationConfiguration
         self.onContinue = onContinue
     }
 
@@ -103,11 +111,14 @@ public struct WelcomeSheetView: View {
                         .background(tintColor)
                         .cornerRadius(14)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(OnboardingInteractiveButtonStyle(
+                    animationConfiguration: animationConfiguration,
+                    reduceMotion: reduceMotion
+                ))
                 .opacity(isAnimating ? 1 : 0)
                 .offset(y: isAnimating ? 0 : 50)
                 .animation(
-                    reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.7).delay(0.6),
+                    reduceMotion ? nil : .spring(response: animationConfiguration.springResponse, dampingFraction: animationConfiguration.springDampingFraction).delay(0.6),
                     value: isAnimating
                 )
                 .padding(.horizontal, 40)
@@ -125,7 +136,7 @@ public struct WelcomeSheetView: View {
                 if reduceMotion {
                     isAnimating = true
                 } else {
-                    withAnimation(.easeOut(duration: 0.6)) {
+                    withAnimation(.easeOut(duration: animationConfiguration.duration)) {
                         isAnimating = true
                     }
                 }
