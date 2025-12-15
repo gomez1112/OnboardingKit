@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// A paged, animated onboarding experience for first-launch flows.
 public struct PagedOnboardingView: View {
     let appName: String
     let pages: [OnboardingPage]
@@ -15,6 +16,12 @@ public struct PagedOnboardingView: View {
     
     @State private var currentPage = 0
     
+    /// Creates a paged onboarding view.
+    /// - Parameters:
+    ///   - appName: Name displayed in the header copy.
+    ///   - pages: Pages to cycle through.
+    ///   - tintColor: Accent color for controls and indicators.
+    ///   - onFinish: Closure executed after the final page or when "Skip" is tapped.
     public init(
         appName: String,
         pages: [OnboardingPage],
@@ -26,7 +33,8 @@ public struct PagedOnboardingView: View {
         self.tintColor = tintColor
         self.onFinish = onFinish
     }
-    
+
+    /// The visual representation of the paged onboarding experience.
     public var body: some View {
         ZStack {
             // Background (Pages)
