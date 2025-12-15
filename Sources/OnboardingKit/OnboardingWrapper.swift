@@ -9,6 +9,7 @@ import SwiftUI
 
 /// Wraps your root view and automatically presents onboarding or "What's New" flows.
 public struct OnboardingWrapper<Content: View>: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(OnboardingManager.storageKey) private var lastSeenVersion: String = ""
     @State private var showOnboarding = false
     @State private var onboardingType: OnboardingType = .firstLaunch
@@ -18,8 +19,9 @@ public struct OnboardingWrapper<Content: View>: View {
     let pages: [OnboardingPage]
     let features: [FeatureItem]
     let tintColor: Color
+    let animationConfiguration: OnboardingAnimationConfiguration
     let content: Content
-    
+
     private enum OnboardingType {
         case none, firstLaunch, whatsNew
     }
@@ -38,6 +40,7 @@ public struct OnboardingWrapper<Content: View>: View {
         pages: [OnboardingPage],
         features: [FeatureItem],
         tint: Color = .blue,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
         @ViewBuilder content: () -> Content
     ) {
         self.appName = appName
@@ -45,6 +48,7 @@ public struct OnboardingWrapper<Content: View>: View {
         self.pages = pages
         self.features = features
         self.tintColor = tint
+        self.animationConfiguration = animationConfiguration
         self.content = content()
     }
 
@@ -56,11 +60,11 @@ public struct OnboardingWrapper<Content: View>: View {
                 Group {
                     switch onboardingType {
                         case .firstLaunch:
-                            PagedOnboardingView(appName: appName, pages: pages, tintColor: tintColor) {
+                            PagedOnboardingView(appName: appName, pages: pages, tintColor: tintColor, animationConfiguration: animationConfiguration) {
                                 completeOnboarding()
                             }
                         case .whatsNew:
-                            WelcomeSheetView(appName: appName, features: features, tintColor: tintColor) {
+                            WelcomeSheetView(appName: appName, features: features, tintColor: tintColor, animationConfiguration: animationConfiguration) {
                                 completeOnboarding()
                             }
                         case .none:
@@ -86,9 +90,14 @@ public struct OnboardingWrapper<Content: View>: View {
     }
     
     private func completeOnboarding() {
-        withAnimation {
+        if reduceMotion {
             showOnboarding = false
             lastSeenVersion = currentVersion
+        } else {
+            withAnimation(.easeOut(duration: animationConfiguration.duration)) {
+                showOnboarding = false
+                lastSeenVersion = currentVersion
+            }
         }
     }
 }

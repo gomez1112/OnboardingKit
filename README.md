@@ -91,6 +91,7 @@ OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen vers
 - **Backgrounds**: Apply per-page or per-feature backgrounds; the provided `Color.obk_systemBackground` helpers keep layouts consistent across Apple platforms.
 - **Per-page actions**: Supply `actionTitle` and `action` when constructing `OnboardingPage` to run lightweight tasks (e.g., priming state) before advancing.
 - **First-launch vs. What’s New**: Customize copy independently by editing `pages` and `features` arrays.
+- **Animation feel**: OnboardingKit ships with a small `OnboardingAnimationConfiguration` that keeps transitions springy and Apple-like by default. Motion-sensitive users get reduced movement automatically via `accessibilityReduceMotion`.
 
 ---
 
@@ -100,6 +101,48 @@ OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen vers
 - **Resetting**: Call `OnboardingManager.resetOnboarding()` during development or QA to force onboarding to show on next launch.
 - **Testing**: Use `@testable import OnboardingKit` and verify storage interactions; the `storageKey` constant keeps test setup consistent.
 - **Accessibility**: Buttons and indicators include accessibility labels; provide meaningful titles and descriptions so assistive technologies announce helpful context.
+
+---
+
+## Animation Configuration
+
+Onboarding animations no longer rely on globals; each view accepts a lightweight configuration object with sensible defaults:
+
+```swift
+let animationConfig = OnboardingAnimationConfiguration(
+    transitionStyle: .platformSlide,
+    reducedMotionTransitionStyle: .fade,
+    duration: 0.35,
+    springResponse: 0.55,
+    springDampingFraction: 0.82,
+    enableHaptics: true
+)
+
+PagedOnboardingView(
+    appName: "Sample",
+    pages: pages,
+    tintColor: .blue,
+    animationConfiguration: animationConfig
+) { /* completion */ }
+```
+
+If users enable **Reduce Motion**, transitions fall back to softer fades and parallax is disabled automatically.
+
+To override animations globally at the wrapper level:
+
+```swift
+OnboardingWrapper(
+    currentVersion: "1.0",
+    pages: pages,
+    features: features,
+    tint: .blue,
+    animationConfiguration: animationConfig
+) {
+    ContentView()
+}
+```
+
+You can also provide different configs when presenting `WelcomeSheetView` or `PagedOnboardingView` directly; all parameters have defaults so existing call sites remain source-compatible.
 
 ---
 
