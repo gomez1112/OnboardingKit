@@ -112,7 +112,7 @@ public struct WelcomeSheetView: View {
                 )
                 .padding(.horizontal, 40)
                 .padding(.vertical, 30)
-                .defaultFocus($isContinueFocused)
+                .defaultFocus($isContinueFocused, true)
             }
             .background(.regularMaterial)
         }

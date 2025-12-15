@@ -97,7 +97,7 @@ public struct PagedOnboardingView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(buttonTitle)
-                .defaultFocus($isPrimaryButtonFocused)
+                .focused($isPrimaryButtonFocused)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 18)
@@ -217,3 +217,4 @@ private struct PageView: View {
         }
     }
 }
+
