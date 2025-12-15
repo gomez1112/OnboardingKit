@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// Wraps your root view and automatically presents onboarding or "What's New" flows.
 public struct OnboardingWrapper<Content: View>: View {
     @AppStorage(OnboardingManager.storageKey) private var lastSeenVersion: String = ""
     @State private var showOnboarding = false
@@ -23,6 +24,14 @@ public struct OnboardingWrapper<Content: View>: View {
         case none, firstLaunch, whatsNew
     }
     
+    /// Creates a wrapper that decides which onboarding experience to show.
+    /// - Parameters:
+    ///   - appName: Display name shown in onboarding UI. Defaults to the bundle name.
+    ///   - currentVersion: Version string used to determine if onboarding should appear.
+    ///   - pages: Pages shown during first-launch onboarding.
+    ///   - features: Feature rows shown in the "What's New" sheet when the version changes.
+    ///   - tint: Accent color applied to controls and imagery.
+    ///   - content: The root view for your application.
     public init(
         appName: String = Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "App",
         currentVersion: String,
@@ -38,7 +47,8 @@ public struct OnboardingWrapper<Content: View>: View {
         self.tintColor = tint
         self.content = content()
     }
-    
+
+    /// The composed view that displays onboarding content when required.
     public var body: some View {
         content
             .onAppear(perform: checkOnboardingStatus)

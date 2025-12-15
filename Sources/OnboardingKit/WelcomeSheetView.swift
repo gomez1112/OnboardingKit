@@ -7,14 +7,29 @@
 
 import SwiftUI
 
+/// A sheet that introduces new features between app versions.
 public struct WelcomeSheetView: View {
     let appName: String
     let features: [FeatureItem]
     let tintColor: Color
     let onContinue: () -> Void
-    
+
     @State private var isAnimating = false
-    
+
+    /// Creates a "What's New" sheet.
+    /// - Parameters:
+    ///   - appName: The product name displayed in the header.
+    ///   - features: Feature rows to present.
+    ///   - tintColor: Accent color used for emphasis and the primary button.
+    ///   - onContinue: Closure executed when the user taps **Continue**.
+    public init(appName: String, features: [FeatureItem], tintColor: Color = .blue, onContinue: @escaping () -> Void) {
+        self.appName = appName
+        self.features = features
+        self.tintColor = tintColor
+        self.onContinue = onContinue
+    }
+
+    /// The animated feature list and primary continue action.
     public var body: some View {
         VStack(spacing: 0) {
             ScrollView {

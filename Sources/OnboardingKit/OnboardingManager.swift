@@ -7,11 +7,12 @@
 
 import Foundation
 
+/// Utilities for coordinating onboarding storage and resets.
 public enum OnboardingManager {
-    // 1. Define the key in one place
+    /// Shared key used to persist the most recently viewed app version.
     static let storageKey = "com.onboardingkit.lastSeenVersion"
-    
-    // 2. The reset function lives here now (no generic issues!)
+
+    /// Clears the stored onboarding version so flows show again on next launch.
     public static func resetOnboarding() {
         UserDefaults.standard.removeObject(forKey: storageKey)
     }
