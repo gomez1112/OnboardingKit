@@ -97,12 +97,13 @@ public struct PagedOnboardingView: View {
                 // Primary button
                 Button(action: handleNextButton) {
                     Text(buttonTitle)
-                        .font(.headline.weight(.bold))
+                        .font(.headline)
+                        .bold()
                         .foregroundStyle(.white)
                         .frame(maxWidth: 520)
                         .frame(minHeight: 48)
                         .background(tintColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(.rect(cornerRadius: 14, style: .continuous))
                         .shadow(radius: 5) // system default
                 }
                 .buttonStyle(OnboardingInteractiveButtonStyle(
@@ -179,7 +180,9 @@ public struct PagedOnboardingView: View {
             withAnimation(Animation.easeOut(duration: animationConfiguration.duration)) {
                 showButtons = false
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + animationConfiguration.duration * 0.9) {
+            Task { @MainActor in
+                let delay = Duration.seconds(animationConfiguration.duration * 0.9)
+                try? await Task.sleep(for: delay)
                 onFinish()
             }
         }
@@ -197,9 +200,10 @@ public struct PagedOnboardingView: View {
     
     // MARK: Platform-specific page containers
     
+    #if os(iOS) || os(tvOS) || os(watchOS)
     private var iOSPageView: some View {
         TabView(selection: $currentPage) {
-            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+            ForEach(pages.enumerated(), id: \.element.id) { index, page in
                 PageView(
                     page: page,
                     tintColor: tintColor,
@@ -215,10 +219,11 @@ public struct PagedOnboardingView: View {
             transaction.animation = animationConfiguration.pageAnimation(reduceMotion: reduceMotion)
         }
     }
+    #endif
 
     private var macPageView: some View {
         ZStack {
-            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+            ForEach(pages.enumerated(), id: \.element.id) { index, page in
                 if currentPage == index {
                     PageView(
                         page: page,
@@ -320,4 +325,3 @@ private struct PageView: View {
         }
     }
 }
-
