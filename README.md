@@ -98,7 +98,7 @@ OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen vers
 ## Advanced Usage
 - **Version strategy**: Provide any string to `currentVersion` (e.g., `"1.2.0 (45)"`) if you want build metadata to trigger the "What's New" sheet.
 - **Manual presentation**: You can present `PagedOnboardingView` or `WelcomeSheetView` directly for custom flows; `OnboardingWrapper` simply orchestrates them for you.
-- **Resetting**: Call `OnboardingManager.resetOnboarding()` during development or QA to force onboarding to show on next launch.
+- **Resetting**: Call `OnboardingManager.resetOnboarding()` during development or QA to force onboarding to show on next launch. If you're using `OnboardingWrapper`, this clears the stored version under `OnboardingManager.storageKey`, so the walkthrough appears again when the app restarts.
 - **Testing**: Use `@testable import OnboardingKit` and verify storage interactions; the `storageKey` constant keeps test setup consistent.
 - **Accessibility**: Buttons and indicators include accessibility labels; provide meaningful titles and descriptions so assistive technologies announce helpful context.
 
@@ -173,6 +173,18 @@ You can also provide different configs when presenting `WelcomeSheetView` or `Pa
 **Does it work without assets?**
 
 - Yes. Use SF Symbols for a zero-asset setup, or provide asset names if you prefer custom artwork.
+
+---
+
+## API Reference Highlights
+- `OnboardingWrapper`: Wrap your root view to automatically present onboarding or "What's New" content based on `currentVersion`.
+- `OnboardingManager.storageKey`: The `UserDefaults` key used to remember the last seen version.
+- `OnboardingManager.resetOnboarding()`: Clears the stored version so onboarding shows again on next launch.
+- `PagedOnboardingView`: Standalone, full onboarding walkthrough with multiple pages.
+- `WelcomeSheetView`: Standalone "What's New" sheet for returning users.
+- `OnboardingPage`: Model describing each onboarding page (title, description, icon, background, optional action).
+- `FeatureItem`: Model describing each feature row in the "What's New" sheet.
+- `OnboardingAnimationConfiguration`: Customize transitions, timing, and haptics to fit your app's feel.
 
 ---
 
