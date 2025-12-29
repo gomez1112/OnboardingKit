@@ -97,7 +97,34 @@ OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen vers
 
 ## Advanced Usage
 - **Version strategy**: Provide any string to `currentVersion` (e.g., `"1.2.0 (45)"`) if you want build metadata to trigger the "What's New" sheet.
-- **Manual presentation**: You can present `PagedOnboardingView` or `WelcomeSheetView` directly for custom flows; `OnboardingWrapper` simply orchestrates them for you.
+- **Manual presentation**: You can trigger onboarding that is already wired into `OnboardingWrapper` by binding to `presentation`.
+
+```swift
+struct SettingsView: View {
+    @State private var presentation: OnboardingPresentation?
+
+    var body: some View {
+        OnboardingWrapper(
+            currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
+            pages: Onboarding.pages,
+            features: Onboarding.features,
+            tint: AppColors.brandAccent,
+            presentation: $presentation
+        ) {
+            RootTabView()
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Show onboarding") {
+                    presentation = .firstLaunch
+                }
+            }
+        }
+    }
+}
+```
+
+Use `.whatsNew` to replay the "What's New" sheet for returning users.
 - **Resetting**: Call `OnboardingManager.resetOnboarding()` during development or QA to force onboarding to show on next launch. If you're using `OnboardingWrapper`, this clears the stored version under `OnboardingManager.storageKey`, so the walkthrough appears again when the app restarts.
 - **Testing**: Use `@testable import OnboardingKit` and verify storage interactions; the `storageKey` constant keeps test setup consistent.
 - **Accessibility**: Buttons and indicators include accessibility labels; provide meaningful titles and descriptions so assistive technologies announce helpful context.

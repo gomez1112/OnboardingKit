@@ -13,7 +13,8 @@ public struct OnboardingWrapper<Content: View>: View {
     @AppStorage(OnboardingManager.storageKey) private var lastSeenVersion: String = ""
     @State private var showOnboarding = false
     @State private var onboardingType: OnboardingType = .firstLaunch
-    
+
+    @Binding private var presentation: OnboardingPresentation?
     let currentVersion: String
     let appName: String
     let pages: [OnboardingPage]
@@ -29,6 +30,7 @@ public struct OnboardingWrapper<Content: View>: View {
     ///   - pages: Pages shown during first-launch onboarding.
     ///   - features: Feature rows shown in the "What's New" sheet when the version changes.
     ///   - tint: Accent color applied to controls and imagery.
+    ///   - presentation: Optional binding used to present onboarding on demand.
     ///   - content: The root view for your application.
     public init(
         appName: String = Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "App",
@@ -37,6 +39,7 @@ public struct OnboardingWrapper<Content: View>: View {
         features: [FeatureItem],
         tint: Color = .blue,
         animationConfiguration: OnboardingAnimationConfiguration = .default,
+        presentation: Binding<OnboardingPresentation?> = .constant(nil),
         @ViewBuilder content: () -> Content
     ) {
         self.appName = appName
@@ -45,6 +48,7 @@ public struct OnboardingWrapper<Content: View>: View {
         self.features = features
         self.tintColor = tint
         self.animationConfiguration = animationConfiguration
+        self._presentation = presentation
         self.content = content()
     }
 
@@ -52,6 +56,10 @@ public struct OnboardingWrapper<Content: View>: View {
     public var body: some View {
         content
             .onAppear(perform: checkOnboardingStatus)
+            .onChange(of: presentation) { _, newValue in
+                guard let newValue else { return }
+                presentOnboarding(for: newValue)
+            }
 #if os(iOS)
             .fullScreenCover(isPresented: $showOnboarding) {
                 OnboardingPresentationView(
@@ -88,6 +96,10 @@ public struct OnboardingWrapper<Content: View>: View {
     
     @MainActor
     private func checkOnboardingStatus() {
+        if let presentation {
+            presentOnboarding(for: presentation)
+            return
+        }
         if lastSeenVersion.isEmpty {
             onboardingType = .firstLaunch
             showOnboarding = true
@@ -104,17 +116,36 @@ public struct OnboardingWrapper<Content: View>: View {
         if reduceMotion {
             showOnboarding = false
             lastSeenVersion = currentVersion
+            presentation = nil
         } else {
             withAnimation(.easeOut(duration: animationConfiguration.duration)) {
                 showOnboarding = false
                 lastSeenVersion = currentVersion
+                presentation = nil
             }
         }
+    }
+
+    @MainActor
+    private func presentOnboarding(for presentation: OnboardingPresentation) {
+        switch presentation {
+        case .firstLaunch:
+            onboardingType = .firstLaunch
+        case .whatsNew:
+            onboardingType = .whatsNew
+        }
+        showOnboarding = true
     }
 }
 
 fileprivate enum OnboardingType {
     case none, firstLaunch, whatsNew
+}
+
+/// Presentation options for manually triggering onboarding.
+public enum OnboardingPresentation: Sendable, Equatable {
+    case firstLaunch
+    case whatsNew
 }
 
 private struct OnboardingPresentationView: View {
