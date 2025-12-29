@@ -125,6 +125,45 @@ struct SettingsView: View {
 ```
 
 Use `.whatsNew` to replay the "What's New" sheet for returning users.
+- **Present from settings or any view**: Keep a shared `presentation` binding at the root and pass it into whichever screen should be able to show onboarding.
+
+```swift
+struct RootView: View {
+    @State private var presentation: OnboardingPresentation?
+
+    var body: some View {
+        OnboardingWrapper(
+            currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
+            pages: Onboarding.pages,
+            features: Onboarding.features,
+            tint: AppColors.brandAccent,
+            presentation: $presentation
+        ) {
+            NavigationStack {
+                SettingsView(presentation: $presentation)
+            }
+        }
+    }
+}
+
+struct SettingsView: View {
+    @Binding var presentation: OnboardingPresentation?
+
+    var body: some View {
+        List {
+            Button("Show onboarding", systemImage: "sparkles") {
+                presentation = .firstLaunch
+            }
+
+            Button("Show what's new", systemImage: "sparkles.rectangle.stack") {
+                presentation = .whatsNew
+            }
+        }
+        .navigationTitle("Settings")
+    }
+}
+```
+
 - **Resetting**: Call `OnboardingManager.resetOnboarding()` during development or QA to force onboarding to show on next launch. If you're using `OnboardingWrapper`, this clears the stored version under `OnboardingManager.storageKey`, so the walkthrough appears again when the app restarts.
 - **Testing**: Use `@testable import OnboardingKit` and verify storage interactions; the `storageKey` constant keeps test setup consistent.
 - **Accessibility**: Buttons and indicators include accessibility labels; provide meaningful titles and descriptions so assistive technologies announce helpful context.
