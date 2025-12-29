@@ -22,7 +22,7 @@ public struct OnboardingWrapper<Content: View>: View {
     let animationConfiguration: OnboardingAnimationConfiguration
     let content: Content
 
-    private enum OnboardingType {
+    fileprivate enum OnboardingType {
         case none, firstLaunch, whatsNew
     }
     
@@ -56,25 +56,34 @@ public struct OnboardingWrapper<Content: View>: View {
     public var body: some View {
         content
             .onAppear(perform: checkOnboardingStatus)
+#if os(iOS)
+            .fullScreenCover(isPresented: $showOnboarding) {
+                OnboardingPresentationView(
+                    onboardingType: onboardingType,
+                    appName: appName,
+                    pages: pages,
+                    features: features,
+                    tintColor: tintColor,
+                    animationConfiguration: animationConfiguration,
+                    completion: completeOnboarding
+                )
+            }
+#else
             .sheet(isPresented: $showOnboarding) {
-                Group {
-                    switch onboardingType {
-                        case .firstLaunch:
-                            PagedOnboardingView(appName: appName, pages: pages, tintColor: tintColor, animationConfiguration: animationConfiguration) {
-                                completeOnboarding()
-                            }
-                        case .whatsNew:
-                            WelcomeSheetView(appName: appName, features: features, tintColor: tintColor, animationConfiguration: animationConfiguration) {
-                                completeOnboarding()
-                            }
-                        case .none:
-                            ProgressView()
-                    }
-                }
+                OnboardingPresentationView(
+                    onboardingType: onboardingType,
+                    appName: appName,
+                    pages: pages,
+                    features: features,
+                    tintColor: tintColor,
+                    animationConfiguration: animationConfiguration,
+                    completion: completeOnboarding
+                )
 #if os(macOS)
                 .frame(width: 500, height: 600)
 #endif
             }
+#endif
     }
     
     private func checkOnboardingStatus() {
@@ -97,6 +106,41 @@ public struct OnboardingWrapper<Content: View>: View {
             withAnimation(.easeOut(duration: animationConfiguration.duration)) {
                 showOnboarding = false
                 lastSeenVersion = currentVersion
+            }
+        }
+    }
+}
+
+private struct OnboardingPresentationView: View {
+    let onboardingType: OnboardingWrapper.OnboardingType
+    let appName: String
+    let pages: [OnboardingPage]
+    let features: [FeatureItem]
+    let tintColor: Color
+    let animationConfiguration: OnboardingAnimationConfiguration
+    let completion: () -> Void
+
+    var body: some View {
+        Group {
+            switch onboardingType {
+            case .firstLaunch:
+                PagedOnboardingView(
+                    appName: appName,
+                    pages: pages,
+                    tintColor: tintColor,
+                    animationConfiguration: animationConfiguration,
+                    completion: completion
+                )
+            case .whatsNew:
+                WelcomeSheetView(
+                    appName: appName,
+                    features: features,
+                    tintColor: tintColor,
+                    animationConfiguration: animationConfiguration,
+                    completion: completion
+                )
+            case .none:
+                ProgressView()
             }
         }
     }
