@@ -61,7 +61,9 @@ public struct OnboardingWrapper<Content: View>: View {
                     features: features,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
-                    completion: completeOnboarding
+                    completion: { @MainActor in
+                        completeOnboarding()
+                    }
                 )
             }
 #else
@@ -73,7 +75,9 @@ public struct OnboardingWrapper<Content: View>: View {
                     features: features,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
-                    completion: completeOnboarding
+                    completion: { @MainActor in
+                        completeOnboarding()
+                    }
                 )
 #if os(macOS)
                 .frame(width: 500, height: 600)
@@ -82,6 +86,7 @@ public struct OnboardingWrapper<Content: View>: View {
 #endif
     }
     
+    @MainActor
     private func checkOnboardingStatus() {
         if lastSeenVersion.isEmpty {
             onboardingType = .firstLaunch
@@ -94,6 +99,7 @@ public struct OnboardingWrapper<Content: View>: View {
         }
     }
     
+    @MainActor
     private func completeOnboarding() {
         if reduceMotion {
             showOnboarding = false
@@ -118,7 +124,7 @@ private struct OnboardingPresentationView: View {
     let features: [FeatureItem]
     let tintColor: Color
     let animationConfiguration: OnboardingAnimationConfiguration
-    let completion: () -> Void
+    let completion: @MainActor @Sendable () -> Void
 
     var body: some View {
         Group {
@@ -129,7 +135,7 @@ private struct OnboardingPresentationView: View {
                     pages: pages,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
-                    completion: completion
+                    onFinish: completion
                 )
             case .whatsNew:
                 WelcomeSheetView(
@@ -137,7 +143,7 @@ private struct OnboardingPresentationView: View {
                     features: features,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
-                    completion: completion
+                    onContinue: completion
                 )
             case .none:
                 ProgressView()
