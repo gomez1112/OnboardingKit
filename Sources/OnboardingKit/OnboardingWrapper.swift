@@ -149,5 +149,8 @@ private struct OnboardingPresentationView: View {
                 ProgressView()
             }
         }
+#if os(iOS)
+        .toolbar(.hidden, for: .tabBar)
+#endif
     }
 }
