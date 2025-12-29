@@ -22,10 +22,6 @@ public struct OnboardingWrapper<Content: View>: View {
     let animationConfiguration: OnboardingAnimationConfiguration
     let content: Content
 
-    fileprivate enum OnboardingType {
-        case none, firstLaunch, whatsNew
-    }
-    
     /// Creates a wrapper that decides which onboarding experience to show.
     /// - Parameters:
     ///   - appName: Display name shown in onboarding UI. Defaults to the bundle name.
@@ -111,8 +107,12 @@ public struct OnboardingWrapper<Content: View>: View {
     }
 }
 
+fileprivate enum OnboardingType {
+    case none, firstLaunch, whatsNew
+}
+
 private struct OnboardingPresentationView: View {
-    let onboardingType: OnboardingWrapper.OnboardingType
+    let onboardingType: OnboardingType
     let appName: String
     let pages: [OnboardingPage]
     let features: [FeatureItem]
