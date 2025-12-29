@@ -13,7 +13,7 @@ public struct PagedOnboardingView: View {
     let pages: [OnboardingPage]
     let tintColor: Color
     let animationConfiguration: OnboardingAnimationConfiguration
-    let onFinish: @MainActor () -> Void
+    let onFinish: @MainActor @Sendable () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var isPrimaryButtonFocused: Bool
@@ -34,7 +34,7 @@ public struct PagedOnboardingView: View {
         pages: [OnboardingPage],
         tintColor: Color = .blue,
         animationConfiguration: OnboardingAnimationConfiguration = .default,
-        onFinish: @escaping @MainActor () -> Void
+        onFinish: @escaping @MainActor @Sendable () -> Void
     ) {
         self.appName = appName
         self.pages = pages

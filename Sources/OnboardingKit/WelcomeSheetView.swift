@@ -13,7 +13,7 @@ public struct WelcomeSheetView: View {
     let features: [FeatureItem]
     let tintColor: Color
     let animationConfiguration: OnboardingAnimationConfiguration
-    let onContinue: () -> Void
+    let onContinue: @MainActor @Sendable () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var isContinueFocused: Bool
@@ -30,7 +30,7 @@ public struct WelcomeSheetView: View {
         features: [FeatureItem],
         tintColor: Color = .blue,
         animationConfiguration: OnboardingAnimationConfiguration = .default,
-        onContinue: @escaping () -> Void
+        onContinue: @escaping @MainActor @Sendable () -> Void
     ) {
         self.appName = appName
         self.features = features
