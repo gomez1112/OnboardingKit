@@ -46,13 +46,15 @@ public struct WelcomeSheetView: View {
                 VStack(spacing: 0) {
                     VStack(spacing: 10) {
                         Text("What's New in")
-                            .font(.title.bold())
+                            .font(.title)
+                            .bold()
                             .multilineTextAlignment(.center)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : -20)
 
                         Text(appName)
-                            .font(.largeTitle.bold())
+                            .font(.largeTitle)
+                            .bold()
                             .foregroundStyle(tintColor)
                             .multilineTextAlignment(.center)
                             .opacity(isAnimating ? 1 : 0)
@@ -62,7 +64,7 @@ public struct WelcomeSheetView: View {
                     .padding(.bottom, 50)
 
                     VStack(alignment: .leading, spacing: 30) {
-                        ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
+                        ForEach(features.enumerated(), id: \.element.id) { index, feature in
                             HStack(alignment: .top, spacing: 16) {
                                 OnboardingImageView(
                                     icon: feature.icon,
@@ -73,7 +75,7 @@ public struct WelcomeSheetView: View {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(feature.title)
                                         .font(.headline)
-                                        .fontWeight(.bold)
+                                        .bold()
                                         .foregroundStyle(.primary)
                                     Text(feature.description)
                                         .font(.subheadline)
@@ -83,7 +85,7 @@ public struct WelcomeSheetView: View {
                             }
                             .padding()
                             .background(feature.backgroundColor)
-                            .cornerRadius(12)
+                            .clipShape(.rect(cornerRadius: 12, style: .continuous))
                             .opacity(isAnimating ? 1 : 0)
                             .offset(x: isAnimating ? 0 : 20)
                             .animation(
@@ -104,12 +106,12 @@ public struct WelcomeSheetView: View {
                 Button(action: onContinue) {
                     Text("Continue")
                         .font(.headline)
-                        .fontWeight(.bold)
+                        .bold()
                         .foregroundStyle(.white)
                         .frame(maxWidth: 500)
                         .frame(minHeight: 48)
                         .background(tintColor)
-                        .cornerRadius(14)
+                        .clipShape(.rect(cornerRadius: 14, style: .continuous))
                 }
                 .buttonStyle(OnboardingInteractiveButtonStyle(
                     animationConfiguration: animationConfiguration,

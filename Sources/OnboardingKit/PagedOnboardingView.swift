@@ -112,6 +112,16 @@ public struct PagedOnboardingView: View {
                 ))
                 .accessibilityLabel(buttonTitle)
                 .focused($isPrimaryButtonFocused)
+
+                if let secondaryTitle = pages[currentPage].secondaryActionButtonTitle,
+                   let secondaryAction = pages[currentPage].secondaryAction {
+                    OnboardingSecondaryActionButton(
+                        title: secondaryTitle,
+                        tintColor: tintColor,
+                        action: secondaryAction
+                    )
+                    .accessibilityLabel(secondaryTitle)
+                }
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 18)
@@ -203,7 +213,7 @@ public struct PagedOnboardingView: View {
     #if os(iOS) || os(tvOS) || os(watchOS)
     private var iOSPageView: some View {
         TabView(selection: $currentPage) {
-            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+            ForEach(pages.enumerated(), id: \.element.id) { index, page in
                 PageView(
                     page: page,
                     tintColor: tintColor,
@@ -223,7 +233,7 @@ public struct PagedOnboardingView: View {
 
     private var macPageView: some View {
         ZStack {
-            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+            ForEach(pages.enumerated(), id: \.element.id) { index, page in
                 if currentPage == index {
                     PageView(
                         page: page,
@@ -276,7 +286,8 @@ private struct PageView: View {
                 .animation(reduceMotion ? nil : .spring(response: animationConfiguration.springResponse, dampingFraction: animationConfiguration.springDampingFraction).delay(0.05), value: animate)
 
                 Text(page.title)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.largeTitle)
+                    .bold()
                     .multilineTextAlignment(.center)
                     .offset(y: animate ? 0 : 18)
                     .opacity(animate ? 1 : 0)
@@ -305,13 +316,17 @@ private struct PageView: View {
         .onAppear {
             // Re-trigger animation when the page becomes visible
             animate = false
-            DispatchQueue.main.async { animate = true }
+            Task { @MainActor in
+                animate = true
+            }
             updateParallax()
         }
         .onChange(of: isActive) { _, active in
             guard active else { return }
             animate = false
-            DispatchQueue.main.async { animate = true }
+            Task { @MainActor in
+                animate = true
+            }
             updateParallax()
         }
     }
@@ -323,5 +338,17 @@ private struct PageView: View {
         withAnimation(animationConfiguration.pageAnimation(reduceMotion: reduceMotion)) {
             parallaxOffset = 0
         }
+    }
+}
+
+private struct OnboardingSecondaryActionButton: View {
+    let title: String
+    let tintColor: Color
+    let action: @Sendable () -> Void
+
+    var body: some View {
+        Button(title, action: action)
+            .buttonStyle(.bordered)
+            .tint(tintColor)
     }
 }
