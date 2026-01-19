@@ -34,6 +34,12 @@ public struct OnboardingPage: Identifiable, Equatable, Sendable {
     /// Actions in UI models should generally be Sendable.
     public let action: (@Sendable () -> Void)?
 
+    /// Optional secondary action button title displayed beneath the primary button.
+    public let secondaryActionButtonTitle: String?
+
+    /// Optional secondary action invoked when the secondary button is tapped.
+    public let secondaryAction: (@Sendable () -> Void)?
+
     /// Creates a page using an SF Symbol.
     /// - Parameters:
     ///   - title: Title shown on the page.
@@ -55,6 +61,8 @@ public struct OnboardingPage: Identifiable, Equatable, Sendable {
         self.iconColor = iconColor
         self.actionButtonTitle = nil
         self.action = nil
+        self.secondaryActionButtonTitle = nil
+        self.secondaryAction = nil
     }
 
     /// Creates a page using an asset image.
@@ -78,6 +86,8 @@ public struct OnboardingPage: Identifiable, Equatable, Sendable {
         self.iconColor = iconColor
         self.actionButtonTitle = nil
         self.action = nil
+        self.secondaryActionButtonTitle = nil
+        self.secondaryAction = nil
     }
 
     /// Creates a page that executes an action when the primary button is tapped.
@@ -105,6 +115,74 @@ public struct OnboardingPage: Identifiable, Equatable, Sendable {
         self.iconColor = iconColor
         self.actionButtonTitle = actionTitle
         self.action = action
+        self.secondaryActionButtonTitle = nil
+        self.secondaryAction = nil
+    }
+
+    /// Creates a page that includes a secondary action button.
+    /// - Parameters:
+    ///   - title: Title shown on the page.
+    ///   - description: Supporting copy.
+    ///   - systemImage: The SF Symbol name to render.
+    ///   - backgroundColor: Background color for the page.
+    ///   - iconColor: Optional tint for the symbol.
+    ///   - actionTitle: Title for the primary button.
+    ///   - action: Closure executed when the primary button is selected.
+    ///   - secondaryActionTitle: Title for the secondary button.
+    ///   - secondaryAction: Closure executed when the secondary button is selected.
+    public init(
+        title: String,
+        description: String,
+        systemImage: String,
+        backgroundColor: Color = .clear,
+        iconColor: Color? = nil,
+        actionTitle: String,
+        action: @escaping @Sendable () -> Void,
+        secondaryActionTitle: String,
+        secondaryAction: @escaping @Sendable () -> Void
+    ) {
+        self.title = title
+        self.description = description
+        self.icon = .system(systemImage)
+        self.backgroundColor = backgroundColor
+        self.iconColor = iconColor
+        self.actionButtonTitle = actionTitle
+        self.action = action
+        self.secondaryActionButtonTitle = secondaryActionTitle
+        self.secondaryAction = secondaryAction
+    }
+
+    /// Creates a page that includes a secondary action button with an asset image.
+    /// - Parameters:
+    ///   - title: Title shown on the page.
+    ///   - description: Supporting copy.
+    ///   - image: The asset name to render.
+    ///   - backgroundColor: Background color for the page.
+    ///   - iconColor: Optional tint for the asset.
+    ///   - actionTitle: Title for the primary button.
+    ///   - action: Closure executed when the primary button is selected.
+    ///   - secondaryActionTitle: Title for the secondary button.
+    ///   - secondaryAction: Closure executed when the secondary button is selected.
+    public init(
+        title: String,
+        description: String,
+        image: String,
+        backgroundColor: Color = .clear,
+        iconColor: Color? = nil,
+        actionTitle: String,
+        action: @escaping @Sendable () -> Void,
+        secondaryActionTitle: String,
+        secondaryAction: @escaping @Sendable () -> Void
+    ) {
+        self.title = title
+        self.description = description
+        self.icon = .asset(image)
+        self.backgroundColor = backgroundColor
+        self.iconColor = iconColor
+        self.actionButtonTitle = actionTitle
+        self.action = action
+        self.secondaryActionButtonTitle = secondaryActionTitle
+        self.secondaryAction = secondaryAction
     }
 
     /// Equality check that ignores non-rendered properties such as the action closure.
@@ -114,6 +192,7 @@ public struct OnboardingPage: Identifiable, Equatable, Sendable {
             lhs.description == rhs.description &&
             lhs.icon == rhs.icon &&
             lhs.backgroundColor == rhs.backgroundColor &&
-            lhs.actionButtonTitle == rhs.actionButtonTitle
+            lhs.actionButtonTitle == rhs.actionButtonTitle &&
+            lhs.secondaryActionButtonTitle == rhs.secondaryActionButtonTitle
     }
 }

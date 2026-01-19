@@ -90,8 +90,28 @@ OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen vers
 - **Icons**: Use SF Symbols via `systemImage:` or asset names via `image:` on `OnboardingPage` and `FeatureItem`.
 - **Backgrounds**: Apply per-page or per-feature backgrounds; the provided `Color.obk_systemBackground` helpers keep layouts consistent across Apple platforms.
 - **Per-page actions**: Supply `actionTitle` and `action` when constructing `OnboardingPage` to run lightweight tasks (e.g., priming state) before advancing.
+- **NEW — Secondary actions per page**: Add a secondary button (e.g., “Learn More”) on any onboarding page to branch into help, permissions, or demo flows without leaving the walkthrough.
 - **First-launch vs. What’s New**: Customize copy independently by editing `pages` and `features` arrays.
 - **Animation feel**: OnboardingKit ships with a small `OnboardingAnimationConfiguration` that keeps transitions springy and Apple-like by default. Motion-sensitive users get reduced movement automatically via `accessibilityReduceMotion`.
+
+### Secondary Action Example (Highlight)
+Use secondary actions to let users explore more without interrupting the main flow:
+
+```swift
+let pages: [OnboardingPage] = [
+    .init(
+        title: "Personalize Alerts",
+        description: "Choose which updates matter most to you.",
+        systemImage: "bell.badge",
+        backgroundColor: .obk_systemBackground,
+        iconColor: .orange,
+        actionTitle: "Allow Notifications",
+        action: { /* Request permissions */ },
+        secondaryActionTitle: "Learn More",
+        secondaryAction: { /* Show help content */ }
+    )
+]
+```
 
 ---
 
