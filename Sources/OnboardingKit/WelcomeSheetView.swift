@@ -64,7 +64,7 @@ public struct WelcomeSheetView: View {
                     .padding(.bottom, 50)
 
                     VStack(alignment: .leading, spacing: 30) {
-                        ForEach(features.enumerated(), id: \.element.id) { index, feature in
+                        ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
                             HStack(alignment: .top, spacing: 16) {
                                 OnboardingImageView(
                                     icon: feature.icon,
