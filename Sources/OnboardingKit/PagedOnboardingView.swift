@@ -213,7 +213,7 @@ public struct PagedOnboardingView: View {
     #if os(iOS) || os(tvOS) || os(watchOS)
     private var iOSPageView: some View {
         TabView(selection: $currentPage) {
-            ForEach(pages.enumerated(), id: \.element.id) { index, page in
+            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
                 PageView(
                     page: page,
                     tintColor: tintColor,
