@@ -57,6 +57,7 @@ public struct PagedOnboardingView: View {
                     macPageView
 #endif
                 }
+                .background(currentPageData?.backgroundColor ?? Color.obk_systemBackground)
                 .ignoresSafeArea()
             }
         }
@@ -93,7 +94,7 @@ public struct PagedOnboardingView: View {
                     } else {
                         ForEach(pages.indices, id: \.self) { index in
                             Circle()
-                                .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
+                                .fill(currentPage == index ? tintColor : Color.secondary.opacity(0.4))
                                 .frame(width: 8, height: 8)
                                 .scaleEffect(currentPage == index ? 1.2 : 1.0)
                                 .offset(y: (indicatorPulse && currentPage == index) ? -2 : 0)
@@ -284,10 +285,11 @@ public struct PagedOnboardingView: View {
                 .font(.largeTitle)
                 .bold()
                 .multilineTextAlignment(.center)
+                .foregroundStyle(.primary)
             Text("Onboarding content isn't available yet.")
                 .font(.body)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 24)
             Spacer()
         }
@@ -329,6 +331,7 @@ private struct PageView: View {
                     .font(.largeTitle)
                     .bold()
                     .multilineTextAlignment(.center)
+                    .foregroundStyle(.primary)
                     .offset(y: animate ? 0 : 18)
                     .opacity(animate ? 1 : 0)
                     .animation(reduceMotion ? nil : .easeOut(duration: animationConfiguration.duration).delay(0.12), value: animate)
@@ -337,7 +340,7 @@ private struct PageView: View {
                 Text(page.description)
                     .font(.body)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
                     .padding(.horizontal, 30)
                     .frame(maxWidth: 520)
                     .offset(y: animate ? 0 : 18)

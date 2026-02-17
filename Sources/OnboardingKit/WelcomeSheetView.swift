@@ -49,13 +49,14 @@ public struct WelcomeSheetView: View {
                             .font(.title)
                             .bold()
                             .multilineTextAlignment(.center)
+                            .foregroundStyle(.primary)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : -20)
 
                         Text(appName)
                             .font(.largeTitle)
                             .bold()
-                            .foregroundStyle(tintColor)
+                            .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : -20)
@@ -79,7 +80,7 @@ public struct WelcomeSheetView: View {
                                         .foregroundStyle(.primary)
                                     Text(feature.description)
                                         .font(.subheadline)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(.primary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
