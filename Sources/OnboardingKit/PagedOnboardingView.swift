@@ -45,15 +45,21 @@ public struct PagedOnboardingView: View {
 
     /// The visual representation of the paged onboarding experience.
     public var body: some View {
-        ZStack {
-            // Background (Pages)
+        Group {
+            if pages.isEmpty {
+                emptyStateView
+            } else {
+                ZStack {
+                    // Background (Pages)
 #if os(iOS) || os(tvOS) || os(watchOS)
-            iOSPageView
+                    iOSPageView
 #elseif os(macOS)
-            macPageView
+                    macPageView
 #endif
+                }
+                .ignoresSafeArea()
+            }
         }
-        .ignoresSafeArea()
         
         // Top controls (no hard-coded safe-area padding)
         .safeAreaInset(edge: .top) {
@@ -82,15 +88,19 @@ public struct PagedOnboardingView: View {
             VStack(spacing: 16) {
                 // Page indicators
                 HStack(spacing: 8) {
-                    ForEach(pages.indices, id: \.self) { index in
-                        Circle()
-                            .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .scaleEffect(currentPage == index ? 1.2 : 1.0)
-                            .offset(y: (indicatorPulse && currentPage == index) ? -2 : 0)
-                            .animation(animationConfiguration.microInteractionAnimation(reduceMotion: reduceMotion), value: indicatorPulse)
-                            .animation(animationConfiguration.pageAnimation(reduceMotion: reduceMotion), value: currentPage)
-                            .accessibilityHidden(true)
+                    if pages.isEmpty {
+                        EmptyView()
+                    } else {
+                        ForEach(pages.indices, id: \.self) { index in
+                            Circle()
+                                .fill(currentPage == index ? tintColor : Color.gray.opacity(0.3))
+                                .frame(width: 8, height: 8)
+                                .scaleEffect(currentPage == index ? 1.2 : 1.0)
+                                .offset(y: (indicatorPulse && currentPage == index) ? -2 : 0)
+                                .animation(animationConfiguration.microInteractionAnimation(reduceMotion: reduceMotion), value: indicatorPulse)
+                                .animation(animationConfiguration.pageAnimation(reduceMotion: reduceMotion), value: currentPage)
+                                .accessibilityHidden(true)
+                        }
                     }
                 }
                 
@@ -113,8 +123,9 @@ public struct PagedOnboardingView: View {
                 .accessibilityLabel(buttonTitle)
                 .focused($isPrimaryButtonFocused)
 
-                if let secondaryTitle = pages[currentPage].secondaryActionButtonTitle,
-                   let secondaryAction = pages[currentPage].secondaryAction {
+                if let page = currentPageData,
+                   let secondaryTitle = page.secondaryActionButtonTitle,
+                   let secondaryAction = page.secondaryAction {
                     OnboardingSecondaryActionButton(
                         title: secondaryTitle,
                         tintColor: tintColor,
@@ -125,7 +136,7 @@ public struct PagedOnboardingView: View {
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 18)
-            .background(.regularMaterial)
+            .background(currentPageData?.backgroundColor ?? Color.obk_systemBackground)
             .opacity(showButtons ? 1 : 0.6)
             .animation(animationConfiguration.pageAnimation(reduceMotion: reduceMotion), value: showButtons)
         }
@@ -149,14 +160,24 @@ public struct PagedOnboardingView: View {
     }
     
     private var buttonTitle: String {
-        let page = pages[currentPage]
+        guard let page = currentPageData else {
+            return "Continue"
+        }
         if let custom = page.actionButtonTitle { return custom }
         return currentPage == pages.count - 1 ? "Get Started" : "Next"
+    }
+
+    private var currentPageData: OnboardingPage? {
+        guard pages.indices.contains(currentPage) else { return nil }
+        return pages[currentPage]
     }
     
     @MainActor
     private func handleNextButton() {
-        let page = pages[currentPage]
+        guard let page = currentPageData else {
+            finishFlow()
+            return
+        }
         page.action?()
 
         if currentPage < pages.count - 1 {
@@ -254,6 +275,25 @@ public struct PagedOnboardingView: View {
 
     private func direction(for index: Int) -> OnboardingAnimationConfiguration.Direction {
         index >= previousPage ? .forward : .backward
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Text("Welcome")
+                .font(.largeTitle)
+                .bold()
+                .multilineTextAlignment(.center)
+            Text("Onboarding content isn't available yet.")
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 24)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.obk_systemBackground)
+        .ignoresSafeArea()
     }
 }
 private struct PageView: View {

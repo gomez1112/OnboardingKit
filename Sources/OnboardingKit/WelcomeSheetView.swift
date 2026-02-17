@@ -127,7 +127,7 @@ public struct WelcomeSheetView: View {
                 .padding(.vertical, 30)
                 .defaultFocus($isContinueFocused, true)
             }
-            .background(.regularMaterial)
+            .background(Color.obk_systemBackground)
         }
 #if os(iOS)
         .interactiveDismissDisabled()

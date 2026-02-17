@@ -192,6 +192,7 @@ public struct OnboardingPage: Identifiable, Equatable, Sendable {
             lhs.description == rhs.description &&
             lhs.icon == rhs.icon &&
             lhs.backgroundColor == rhs.backgroundColor &&
+            lhs.iconColor == rhs.iconColor &&
             lhs.actionButtonTitle == rhs.actionButtonTitle &&
             lhs.secondaryActionButtonTitle == rhs.secondaryActionButtonTitle
     }

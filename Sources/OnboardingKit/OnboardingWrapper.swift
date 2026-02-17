@@ -89,6 +89,7 @@ public struct OnboardingWrapper<Content: View>: View {
                 )
 #if os(macOS)
                 .frame(width: 500, height: 600)
+                .interactiveDismissDisabled()
 #endif
             }
 #endif
