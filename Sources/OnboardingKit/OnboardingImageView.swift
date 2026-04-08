@@ -62,21 +62,25 @@ private struct AccessibilityImageModifiers: ViewModifier {
     let accessibilityLabel: String?
 
     func body(content: Content) -> some View {
-        var view = AnyView(content)
-
-        if let label = accessibilityLabel, !label.isEmpty {
-            view = AnyView(view.accessibilityLabel(Text(label)))
-        }
-
-        // Hide from accessibility if there's no useful label
-        view = AnyView(view.accessibilityHidden(accessibilityLabel == nil || accessibilityLabel?.isEmpty == true))
-
         // Add image trait where supported (iOS, tvOS, watchOS). Not available on macOS.
         #if os(iOS) || os(tvOS) || os(watchOS)
-        view = AnyView(view.accessibilityAddTraits(.isImage))
+        accessibleContent(for: content)
+            .accessibilityAddTraits(.isImage)
         #endif
+        #if os(macOS)
+        accessibleContent(for: content)
+        #endif
+    }
 
-        return view
+    @ViewBuilder
+    private func accessibleContent(for content: Content) -> some View {
+        if let accessibilityLabel, !accessibilityLabel.isEmpty {
+            content
+                .accessibilityLabel(Text(accessibilityLabel))
+                .accessibilityHidden(false)
+        } else {
+            content.accessibilityHidden(true)
+        }
     }
 }
 
@@ -129,4 +133,3 @@ extension Color {
 #endif
     }
 }
-
