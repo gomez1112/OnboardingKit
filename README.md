@@ -91,8 +91,32 @@ OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen vers
 - **Backgrounds**: Apply per-page or per-feature backgrounds; the provided `Color.obk_systemBackground` helpers keep layouts consistent across Apple platforms.
 - **Per-page actions**: Supply `actionTitle` and `action` when constructing `OnboardingPage` to run lightweight tasks (e.g., priming state) before advancing.
 - **NEW — Secondary actions per page**: Add a secondary button (e.g., “Learn More”) on any onboarding page to branch into help, permissions, or demo flows without leaving the walkthrough.
-- **First-launch vs. What’s New**: Customize copy independently by editing `pages` and `features` arrays.
+- **First-launch vs. What’s New**: Customize structure via `pages`/`features`, and customize shared button/header wording with `OnboardingCopy`.
 - **Animation feel**: OnboardingKit ships with a small `OnboardingAnimationConfiguration` that keeps transitions springy and Apple-like by default. Motion-sensitive users get reduced movement automatically via `accessibilityReduceMotion`.
+
+
+### OnboardingCopy Example (New)
+Use `OnboardingCopy` to customize shared labels without editing package internals:
+
+```swift
+let copy = OnboardingCopy(
+    skipButtonTitle: "Later",
+    nextButtonTitle: "Continue",
+    getStartedButtonTitle: "Start",
+    continueButtonTitle: "Done",
+    whatsNewHeaderTitle: "New in"
+)
+
+OnboardingWrapper(
+    currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
+    pages: pages,
+    features: features,
+    tint: .blue,
+    copy: copy
+) {
+    ContentView()
+}
+```
 
 ### Secondary Action Example (Highlight)
 Use secondary actions to let users explore more without interrupting the main flow:
@@ -254,7 +278,7 @@ You can also provide different configs when presenting `WelcomeSheetView` or `Pa
 
 **How do I localize strings?**
 
-- Provide localized values for titles, descriptions, and button labels when constructing `OnboardingPage` and `FeatureItem` models.
+- Provide localized values for titles and descriptions in `OnboardingPage` / `FeatureItem`, and configure shared control/header labels through `OnboardingCopy`.
 
 **Does it work without assets?**
 
@@ -271,6 +295,7 @@ You can also provide different configs when presenting `WelcomeSheetView` or `Pa
 - `OnboardingPage`: Model describing each onboarding page (title, description, icon, background, optional action).
 - `FeatureItem`: Model describing each feature row in the "What's New" sheet.
 - `OnboardingAnimationConfiguration`: Customize transitions, timing, and haptics to fit your app's feel.
+- `OnboardingCopy`: Centralize shared onboarding labels (Skip/Next/Get Started/Continue/What's New header).
 
 ---
 

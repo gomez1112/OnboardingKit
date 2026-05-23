@@ -13,6 +13,7 @@ public struct PagedOnboardingView: View {
     let pages: [OnboardingPage]
     let tintColor: Color
     let animationConfiguration: OnboardingAnimationConfiguration
+    let copy: OnboardingCopy
     let onFinish: @MainActor @Sendable () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -34,12 +35,14 @@ public struct PagedOnboardingView: View {
         pages: [OnboardingPage],
         tintColor: Color = .blue,
         animationConfiguration: OnboardingAnimationConfiguration = .default,
+        copy: OnboardingCopy = .default,
         onFinish: @escaping @MainActor @Sendable () -> Void
     ) {
         self.appName = appName
         self.pages = pages
         self.tintColor = tintColor
         self.animationConfiguration = animationConfiguration
+        self.copy = copy
         self.onFinish = onFinish
     }
 
@@ -67,7 +70,7 @@ public struct PagedOnboardingView: View {
             HStack {
                 Spacer()
                 if shouldShowSkip {
-                    Button("Skip") {
+                    Button(copy.skipButtonTitle) {
                         finishFlow()
                     }
                         .font(.subheadline)
@@ -162,10 +165,10 @@ public struct PagedOnboardingView: View {
     
     private var buttonTitle: String {
         guard let page = currentPageData else {
-            return "Continue"
+            return copy.continueButtonTitle
         }
         if let custom = page.actionButtonTitle { return custom }
-        return currentPage == pages.count - 1 ? "Get Started" : "Next"
+        return currentPage == pages.count - 1 ? copy.getStartedButtonTitle : copy.nextButtonTitle
     }
 
     private var currentPageData: OnboardingPage? {

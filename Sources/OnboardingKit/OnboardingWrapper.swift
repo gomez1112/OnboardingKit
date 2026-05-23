@@ -21,6 +21,7 @@ public struct OnboardingWrapper<Content: View>: View {
     let features: [FeatureItem]
     let tintColor: Color
     let animationConfiguration: OnboardingAnimationConfiguration
+    let copy: OnboardingCopy
     let content: Content
 
     /// Creates a wrapper that decides which onboarding experience to show.
@@ -39,6 +40,7 @@ public struct OnboardingWrapper<Content: View>: View {
         features: [FeatureItem],
         tint: Color = .blue,
         animationConfiguration: OnboardingAnimationConfiguration = .default,
+        copy: OnboardingCopy = .default,
         presentation: Binding<OnboardingPresentation?> = .constant(nil),
         @ViewBuilder content: () -> Content
     ) {
@@ -48,6 +50,7 @@ public struct OnboardingWrapper<Content: View>: View {
         self.features = features
         self.tintColor = tint
         self.animationConfiguration = animationConfiguration
+        self.copy = copy
         self._presentation = presentation
         self.content = content()
     }
@@ -69,6 +72,7 @@ public struct OnboardingWrapper<Content: View>: View {
                     features: features,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
+                    copy: copy,
                     completion: { @MainActor in
                         completeOnboarding()
                     }
@@ -83,6 +87,7 @@ public struct OnboardingWrapper<Content: View>: View {
                     features: features,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
+                    copy: copy,
                     completion: { @MainActor in
                         completeOnboarding()
                     }
@@ -156,6 +161,7 @@ private struct OnboardingPresentationView: View {
     let features: [FeatureItem]
     let tintColor: Color
     let animationConfiguration: OnboardingAnimationConfiguration
+    let copy: OnboardingCopy
     let completion: @MainActor @Sendable () -> Void
 
     var body: some View {
@@ -167,6 +173,7 @@ private struct OnboardingPresentationView: View {
                     pages: pages,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
+                    copy: copy,
                     onFinish: completion
                 )
             case .whatsNew:
@@ -175,6 +182,7 @@ private struct OnboardingPresentationView: View {
                     features: features,
                     tintColor: tintColor,
                     animationConfiguration: animationConfiguration,
+                    copy: copy,
                     onContinue: completion
                 )
             case .none:
