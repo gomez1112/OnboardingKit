@@ -13,6 +13,7 @@ public struct WelcomeSheetView: View {
     let features: [FeatureItem]
     let tintColor: Color
     let animationConfiguration: OnboardingAnimationConfiguration
+    let copy: OnboardingCopy
     let onContinue: @MainActor @Sendable () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -30,12 +31,14 @@ public struct WelcomeSheetView: View {
         features: [FeatureItem],
         tintColor: Color = .blue,
         animationConfiguration: OnboardingAnimationConfiguration = .default,
+        copy: OnboardingCopy = .default,
         onContinue: @escaping @MainActor @Sendable () -> Void
     ) {
         self.appName = appName
         self.features = features
         self.tintColor = tintColor
         self.animationConfiguration = animationConfiguration
+        self.copy = copy
         self.onContinue = onContinue
     }
 
@@ -45,7 +48,7 @@ public struct WelcomeSheetView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     VStack(spacing: 10) {
-                        Text("What's New in")
+                        Text(copy.whatsNewHeaderTitle)
                             .font(.title)
                             .bold()
                             .multilineTextAlignment(.center)
@@ -65,7 +68,7 @@ public struct WelcomeSheetView: View {
                     .padding(.bottom, 50)
 
                     VStack(alignment: .leading, spacing: 30) {
-                        ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
+                        ForEach(features.enumerated(), id: \.element.id) { index, feature in
                             HStack(alignment: .top, spacing: 16) {
                                 OnboardingImageView(
                                     icon: feature.icon,
@@ -105,7 +108,7 @@ public struct WelcomeSheetView: View {
             
             VStack {
                 Button(action: onContinue) {
-                    Text("Continue")
+                    Text(copy.continueButtonTitle)
                         .font(.headline)
                         .bold()
                         .foregroundStyle(.white)
