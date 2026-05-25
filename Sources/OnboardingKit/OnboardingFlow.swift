@@ -105,6 +105,17 @@ public struct OnboardingStep: Identifiable, Sendable, Equatable {
         self.secondaryActionTitle = secondaryActionTitle
         self.secondaryAction = secondaryAction
     }
+
+    public static func == (lhs: OnboardingStep, rhs: OnboardingStep) -> Bool {
+        lhs.id == rhs.id &&
+            lhs.title == rhs.title &&
+            lhs.subtitle == rhs.subtitle &&
+            lhs.icon == rhs.icon &&
+            lhs.kind == rhs.kind &&
+            lhs.features == rhs.features &&
+            lhs.isRequired == rhs.isRequired &&
+            lhs.secondaryActionTitle == rhs.secondaryActionTitle
+    }
 }
 
 @resultBuilder
@@ -197,7 +208,7 @@ private struct OnboardingStepHeader: View {
     var body: some View {
         VStack {
             if let icon = step.icon {
-                OnboardingImageView(icon: icon, tintColor: tint, symbolColor: nil)
+                OnboardingImageView(icon: icon, tintColor: tint, symbolColor: nil, size: 84)
                     .accessibilityHidden(true)
             }
             Text(step.title)
