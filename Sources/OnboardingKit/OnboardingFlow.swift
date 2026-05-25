@@ -162,18 +162,45 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
     }
 
     public var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             if let step = activeStep {
-                OnboardingStepHeader(step: step, tint: tint)
-                OnboardingStepBody(step: step, tint: tint, customContent: customContent)
-                Spacer()
-                OnboardingProgressFooter(progressStyle: progressStyle, tint: tint, currentIndex: currentIndex, total: max(steps.count, 1))
-                OnboardingStepControls(step: step, copy: copy, tint: tint, isLastStep: isLastStep, isPerformingAction: isPerformingAction, currentIndex: currentIndex, onBack: { currentIndex -= 1 }, onCancel: onCancel, onSkip: onSkip, advance: { await handlePrimaryAction(step: step) })
+                Spacer(minLength: 28)
+
+                VStack(spacing: 24) {
+                    OnboardingStepHeader(step: step, tint: tint)
+                    OnboardingStepBody(step: step, tint: tint, customContent: customContent)
+                }
+                .frame(maxWidth: 520)
+
+                Spacer(minLength: 28)
+
+                OnboardingProgressFooter(
+                    progressStyle: progressStyle,
+                    tint: tint,
+                    currentIndex: currentIndex,
+                    total: max(steps.count, 1)
+                )
+                .padding(.bottom, 18)
+
+                OnboardingStepControls(
+                    step: step,
+                    copy: copy,
+                    tint: tint,
+                    isLastStep: isLastStep,
+                    isPerformingAction: isPerformingAction,
+                    currentIndex: currentIndex,
+                    onBack: { currentIndex -= 1 },
+                    onCancel: onCancel,
+                    onSkip: onSkip,
+                    advance: { await handlePrimaryAction(step: step) }
+                )
             } else {
                 ProgressView()
             }
         }
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 20)
     }
 
     private var activeStep: OnboardingStep? {
@@ -206,19 +233,26 @@ private struct OnboardingStepHeader: View {
     let tint: Color
 
     var body: some View {
-        VStack {
+        VStack(spacing: 14) {
             if let icon = step.icon {
                 OnboardingImageView(icon: icon, tintColor: tint, symbolColor: nil, size: 84)
                     .accessibilityHidden(true)
             }
-            Text(step.title)
-                .font(.title)
-                .bold()
-                .multilineTextAlignment(.center)
-            if let subtitle = step.subtitle {
-                Text(subtitle)
+
+            VStack(spacing: 8) {
+                Text(step.title)
+                    .font(.largeTitle.weight(.bold))
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.78)
+
+                if let subtitle = step.subtitle {
+                    Text(subtitle)
+                        .font(.title3)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }
@@ -234,26 +268,54 @@ private struct OnboardingStepBody<CustomStepContent: View>: View {
         case .welcome:
             EmptyView()
         case .features:
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(step.features) { feature in
-                    Label {
-                        VStack(alignment: .leading) {
-                            Text(feature.title)
-                            if let subtitle = feature.subtitle {
-                                Text(subtitle)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    } icon: {
-                        Image(systemName: feature.systemImage)
-                            .foregroundStyle(tint)
-                    }
+                    OnboardingFeatureRow(feature: feature, tint: tint)
                 }
             }
+            .frame(maxWidth: 420)
         case .custom:
             customContent(step)
         }
+    }
+}
+
+private struct OnboardingFeatureRow: View {
+    let feature: OnboardingStep.Feature
+    let tint: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: feature.systemImage)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 34, height: 34)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(tint.opacity(0.12))
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(feature.title)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                if let subtitle = feature.subtitle {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.thinMaterial)
+        )
     }
 }
 
@@ -266,11 +328,11 @@ private struct OnboardingProgressFooter: View {
     var body: some View {
         switch progressStyle {
         case .dots:
-            HStack {
+            HStack(spacing: 8) {
                 ForEach(0..<total, id: \.self) { index in
-                    Circle()
+                    Capsule()
                         .fill(index == currentIndex ? tint : .secondary.opacity(0.3))
-                        .frame(width: 8, height: 8)
+                        .frame(width: index == currentIndex ? 24 : 8, height: 8)
                         .accessibilityHidden(true)
                 }
             }
@@ -297,13 +359,35 @@ private struct OnboardingStepControls: View {
     let advance: @MainActor @Sendable () async -> Void
 
     var body: some View {
-        VStack {
-            HStack {
+        VStack(spacing: 12) {
+            Button {
+                Task { @MainActor in await advance() }
+            } label: {
+                HStack(spacing: 8) {
+                    if isPerformingAction {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    Text(isLastStep ? copy.getStartedButtonTitle : copy.nextButtonTitle)
+                        .font(.headline)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .tint(tint)
+            .disabled(isPerformingAction || !(step.isComplete?() ?? true))
+
+            HStack(spacing: 16) {
                 if currentIndex > 0 {
                     Button("Back") { onBack() }
                         .disabled(isPerformingAction)
                 }
+
                 Spacer()
+
                 if let onCancel {
                     Button("Cancel") {
                         Task { @MainActor in await onCancel() }
@@ -311,12 +395,7 @@ private struct OnboardingStepControls: View {
                     .disabled(isPerformingAction)
                 }
             }
-            Button(isLastStep ? copy.getStartedButtonTitle : copy.nextButtonTitle) {
-                Task { @MainActor in await advance() }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(tint)
-            .disabled(isPerformingAction || !(step.isComplete?() ?? true))
+            .font(.body.weight(.medium))
 
             if !step.isRequired {
                 Button(copy.skipButtonTitle) {
@@ -336,5 +415,6 @@ private struct OnboardingStepControls: View {
                 .disabled(isPerformingAction)
             }
         }
+        .frame(maxWidth: 420)
     }
 }
