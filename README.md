@@ -21,6 +21,7 @@ Add **OnboardingKit** using Swift Package Manager:
 
 ---
 
+
 ## Quick Start
 1) **Create your first-launch pages**
 ```swift
@@ -82,6 +83,75 @@ struct MyApp: App {
 ```
 
 OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen version. First-time users see the walkthrough; returning users see "What's New" when the version changes.
+
+
+## OnboardingFlow (Recommended)
+`OnboardingFlow` is the primary API for welcome pages, feature walkthroughs, what's-new style summaries, and interactive setup/personalization content in one flow.
+
+- `OnboardingStep.welcome`: simple intro screens
+- `OnboardingStep.features`: feature list screens
+- `OnboardingStep.custom`: app-specific interactive setup screens
+- `OnboardingProgressStyle`: `.dots`, `.fraction`, or `.hidden`
+
+```swift
+OnboardingFlow(
+    tint: .blue,
+    progressStyle: .dots,
+    onComplete: {
+        await saveOnboarding()
+    },
+    onCancel: {
+        await cancelOnboarding()
+    },
+    onSkip: { stepID in
+        await recordSkippedStep(stepID)
+    }
+) {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "A simple introduction to the app.",
+        systemImage: "sparkles"
+    )
+
+    OnboardingStep.features(
+        id: "features",
+        title: "What You Can Do",
+        features: [
+            .init(title: "Plan Projects", systemImage: "checklist"),
+            .init(title: "Track Progress", systemImage: "chart.line.uptrend.xyaxis"),
+            .init(title: "Reflect Weekly", systemImage: "arrow.triangle.2.circlepath")
+        ]
+    )
+
+    OnboardingStep.custom(
+        id: "goals",
+        title: "Choose Your Goals",
+        subtitle: "Pick what you want this app to help with.",
+        systemImage: "target",
+        isComplete: { setupState.canContinueFromGoals }
+    )
+
+    OnboardingStep.custom(
+        id: "name",
+        title: "Personalize Your Experience",
+        subtitle: "Tell the app what to call you.",
+        systemImage: "person.crop.circle",
+        isComplete: { setupState.canContinueFromName }
+    )
+} customContent: { step in
+    switch step.id {
+    case "goals":
+        GoalSelectionView(state: setupState)
+    case "name":
+        DisplayNameSetupView(state: setupState)
+    default:
+        EmptyView()
+    }
+}
+```
+
+`OnboardingWrapper`, `OnboardingPage`, `FeatureItem`, and `OnboardingCopy` remain fully supported for existing first-launch and what’s-new flows.
 
 ---
 
