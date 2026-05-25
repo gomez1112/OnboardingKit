@@ -145,20 +145,23 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         tint: Color = .blue,
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
+        initialStepIndex: Int = 0,
         onComplete: @escaping @MainActor @Sendable () async -> Void,
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
         @OnboardingBuilder steps: () -> [OnboardingStep],
         @ViewBuilder customContent: @escaping (OnboardingStep) -> CustomStepContent
     ) {
+        let resolvedSteps = steps()
         self.tint = tint
         self.copy = copy
         self.progressStyle = progressStyle
         self.onComplete = onComplete
         self.onCancel = onCancel
         self.onSkip = onSkip
-        self.steps = steps()
+        self.steps = resolvedSteps
         self.customContent = customContent
+        _currentIndex = State(initialValue: resolvedSteps.indices.contains(initialStepIndex) ? initialStepIndex : 0)
     }
 
     public var body: some View {
@@ -174,21 +177,15 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
 
                 Spacer(minLength: 28)
 
-                OnboardingProgressFooter(
-                    progressStyle: progressStyle,
-                    tint: tint,
-                    currentIndex: currentIndex,
-                    total: max(steps.count, 1)
-                )
-                .padding(.bottom, 18)
-
                 OnboardingStepControls(
                     step: step,
                     copy: copy,
+                    progressStyle: progressStyle,
                     tint: tint,
                     isLastStep: isLastStep,
                     isPerformingAction: isPerformingAction,
                     currentIndex: currentIndex,
+                    totalSteps: max(steps.count, 1),
                     onBack: { currentIndex -= 1 },
                     onCancel: onCancel,
                     onSkip: onSkip,
@@ -349,17 +346,48 @@ private struct OnboardingProgressFooter: View {
 private struct OnboardingStepControls: View {
     let step: OnboardingStep
     let copy: OnboardingCopy
+    let progressStyle: OnboardingProgressStyle
     let tint: Color
     let isLastStep: Bool
     let isPerformingAction: Bool
     let currentIndex: Int
+    let totalSteps: Int
     let onBack: () -> Void
     let onCancel: (@MainActor @Sendable () async -> Void)?
     let onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)?
     let advance: @MainActor @Sendable () async -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
+            HStack(spacing: 16) {
+                if currentIndex > 0 {
+                    Button("Back") { onBack() }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(tint)
+                        .disabled(isPerformingAction)
+                }
+
+                Spacer()
+
+                if let onCancel {
+                    Button("Cancel") {
+                        Task { @MainActor in await onCancel() }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(tint)
+                    .disabled(isPerformingAction)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 32, alignment: .center)
+            .font(.body.weight(.medium))
+
+            OnboardingProgressFooter(
+                progressStyle: progressStyle,
+                tint: tint,
+                currentIndex: currentIndex,
+                total: totalSteps
+            )
+
             Button {
                 Task { @MainActor in await advance() }
             } label: {
@@ -379,23 +407,6 @@ private struct OnboardingStepControls: View {
             .buttonBorderShape(.capsule)
             .tint(tint)
             .disabled(isPerformingAction || !(step.isComplete?() ?? true))
-
-            HStack(spacing: 16) {
-                if currentIndex > 0 {
-                    Button("Back") { onBack() }
-                        .disabled(isPerformingAction)
-                }
-
-                Spacer()
-
-                if let onCancel {
-                    Button("Cancel") {
-                        Task { @MainActor in await onCancel() }
-                    }
-                    .disabled(isPerformingAction)
-                }
-            }
-            .font(.body.weight(.medium))
 
             if !step.isRequired {
                 Button(copy.skipButtonTitle) {
