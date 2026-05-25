@@ -22,7 +22,7 @@ Add **OnboardingKit** using Swift Package Manager:
 ---
 
 
-## Quick Start
+## Quick Start (Legacy Wrapper API)
 1) **Create your first-launch pages**
 ```swift
 let pages: [OnboardingPage] = [
@@ -84,6 +84,111 @@ struct MyApp: App {
 
 OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen version. First-time users see the walkthrough; returning users see "What's New" when the version changes.
 
+
+
+## New API Setup (OnboardingFlow)
+Use this setup if you're adopting the new flow-based API. It keeps onboarding structure in one place and supports welcome, feature, and interactive setup steps.
+
+### 1) Create a setup state object
+```swift
+import Observation
+
+@MainActor
+@Observable
+final class OnboardingSetupState {
+    var selectedGoals: Set<String> = []
+    var displayName: String = ""
+
+    var canContinueFromGoals: Bool { !selectedGoals.isEmpty }
+    var canContinueFromName: Bool { !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+}
+```
+
+### 2) Build your onboarding flow
+```swift
+struct AppOnboardingView: View {
+    @State private var setupState = OnboardingSetupState()
+
+    var body: some View {
+        OnboardingFlow(
+            tint: .blue,
+            progressStyle: .dots,
+            onComplete: {
+                await persistOnboardingCompletion()
+            },
+            onSkip: { stepID in
+                await recordSkippedStep(stepID)
+            }
+        ) {
+            OnboardingStep.welcome(
+                id: "welcome",
+                title: "Welcome",
+                subtitle: "A quick introduction to get started.",
+                systemImage: "sparkles"
+            )
+
+            OnboardingStep.features(
+                id: "features",
+                title: "What's New",
+                features: [
+                    .init(title: "Dashboard", systemImage: "rectangle.3.group"),
+                    .init(title: "Smart Search", systemImage: "magnifyingglass")
+                ]
+            )
+
+            OnboardingStep.custom(
+                id: "goals",
+                title: "Choose Your Goals",
+                subtitle: "Pick at least one to continue.",
+                systemImage: "target",
+                isComplete: { setupState.canContinueFromGoals }
+            )
+
+            OnboardingStep.custom(
+                id: "name",
+                title: "Your Name",
+                subtitle: "Tell us what to call you.",
+                systemImage: "person.crop.circle",
+                isComplete: { setupState.canContinueFromName }
+            )
+        } customContent: { step in
+            switch step.id {
+            case "goals":
+                GoalSelectionView(state: setupState)
+            case "name":
+                DisplayNameSetupView(state: setupState)
+            default:
+                EmptyView()
+            }
+        }
+    }
+
+    private func persistOnboardingCompletion() async {
+        // Store completion/version marker in your app
+    }
+
+    private func recordSkippedStep(_ stepID: String) async {
+        // Optional analytics/tracking
+    }
+}
+```
+
+### 3) Present the flow from your app root
+```swift
+@main
+struct MyApp: App {
+    var body: some Scene {
+        WindowGroup {
+            AppOnboardingView()
+        }
+    }
+}
+```
+
+### 4) Keep using wrapper APIs only when needed
+`OnboardingWrapper`, `OnboardingPage`, and `FeatureItem` are still supported for existing integrations, but new implementations should start with `OnboardingFlow`.
+
+---
 
 ## OnboardingFlow (Recommended)
 `OnboardingFlow` is the primary API for welcome pages, feature walkthroughs, what's-new style summaries, and interactive setup/personalization content in one flow.
