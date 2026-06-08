@@ -120,14 +120,18 @@ extension Color {
     static var obk_secondarySystemBackground: Color {
 #if os(macOS)
         Color(PlatformColor.windowBackgroundColor)
+#elseif os(watchOS)
+        Color.gray.opacity(0.2)
 #else
         Color(PlatformColor.secondarySystemBackground)
 #endif
     }
-    
+
     static var obk_systemBackground: Color {
 #if os(macOS)
         Color(PlatformColor.windowBackgroundColor)
+#elseif os(watchOS)
+        Color.black
 #else
         Color(PlatformColor.systemBackground)
 #endif
