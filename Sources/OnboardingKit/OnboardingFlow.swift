@@ -6,6 +6,11 @@ public enum OnboardingProgressStyle: Sendable, Equatable {
     case hidden
 }
 
+private enum OnboardingNavigationDirection {
+    case forward
+    case backward
+}
+
 public struct OnboardingStep: Identifiable, Sendable, Equatable {
     public struct Feature: Identifiable, Sendable, Equatable {
         public let id = UUID()
@@ -134,20 +139,24 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
     private let tint: Color
     private let copy: OnboardingCopy
     private let progressStyle: OnboardingProgressStyle
+    private let animationConfiguration: OnboardingAnimationConfiguration
     private let steps: [OnboardingStep]
     private let onComplete: @MainActor @Sendable () async -> Void
     private let onCancel: (@MainActor @Sendable () async -> Void)?
     private let onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)?
     private let customContent: (OnboardingStep) -> CustomStepContent
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var currentIndex = 0
     @State private var isPerformingAction = false
+    @State private var navigationDirection: OnboardingNavigationDirection = .forward
 
     public init(
         tint: Color = .blue,
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
@@ -158,6 +167,7 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         self.tint = tint
         self.copy = copy
         self.progressStyle = progressStyle
+        self.animationConfiguration = animationConfiguration
         self.onComplete = onComplete
         self.onCancel = onCancel
         self.onSkip = onSkip
@@ -173,6 +183,7 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
@@ -181,6 +192,7 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         self.tint = tint
         self.copy = copy
         self.progressStyle = progressStyle
+        self.animationConfiguration = animationConfiguration
         self.onComplete = onComplete
         self.onCancel = onCancel
         self.onSkip = onSkip
@@ -199,6 +211,8 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
                     OnboardingStepBody(step: step, tint: tint, customContent: customContent)
                 }
                 .frame(maxWidth: 520)
+                .id(step.id)
+                .transition(activeStepTransition)
 
                 Spacer(minLength: 28)
 
@@ -211,7 +225,8 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
                     isPerformingAction: isPerformingAction,
                     currentIndex: currentIndex,
                     totalSteps: max(steps.count, 1),
-                    onBack: { currentIndex -= 1 },
+                    progressAnimation: progressAnimation,
+                    onBack: goBack,
                     onCancel: onCancel,
                     onSkip: onSkip,
                     advance: { await handlePrimaryAction(step: step) }
@@ -234,6 +249,41 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         currentIndex == steps.count - 1
     }
 
+    private var activeStepTransition: AnyTransition {
+        if reduceMotion {
+            return animationConfiguration.reduceMotionTransition
+        }
+
+        switch navigationDirection {
+        case .forward:
+            return animationConfiguration.forwardTransition
+        case .backward:
+            return animationConfiguration.backwardTransition
+        }
+    }
+
+    private var progressAnimation: Animation? {
+        animationConfiguration.animatesProgress ? animationConfiguration.animation : nil
+    }
+
+    private func goBack() {
+        guard currentIndex > 0 else { return }
+
+        withAnimation(animationConfiguration.animation) {
+            navigationDirection = .backward
+            currentIndex -= 1
+        }
+    }
+
+    private func goForward() {
+        guard currentIndex < steps.count - 1 else { return }
+
+        withAnimation(animationConfiguration.animation) {
+            navigationDirection = .forward
+            currentIndex += 1
+        }
+    }
+
     @MainActor
     private func handlePrimaryAction(step: OnboardingStep) async {
         guard !isPerformingAction else { return }
@@ -244,7 +294,7 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         if isLastStep {
             await onComplete()
         } else {
-            currentIndex += 1
+            goForward()
         }
         isPerformingAction = false
     }
@@ -257,6 +307,7 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
@@ -268,6 +319,7 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
             copy: copy,
             progressStyle: progressStyle,
             initialStepIndex: initialStepIndex,
+            animationConfiguration: animationConfiguration,
             onComplete: onComplete,
             onCancel: onCancel,
             onSkip: onSkip,
@@ -282,6 +334,7 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil
@@ -292,6 +345,7 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
             copy: copy,
             progressStyle: progressStyle,
             initialStepIndex: initialStepIndex,
+            animationConfiguration: animationConfiguration,
             onComplete: onComplete,
             onCancel: onCancel,
             onSkip: onSkip,
@@ -427,6 +481,7 @@ private struct OnboardingStepControls: View {
     let isPerformingAction: Bool
     let currentIndex: Int
     let totalSteps: Int
+    let progressAnimation: Animation?
     let onBack: () -> Void
     let onCancel: (@MainActor @Sendable () async -> Void)?
     let onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)?
@@ -462,6 +517,7 @@ private struct OnboardingStepControls: View {
                 currentIndex: currentIndex,
                 total: totalSteps
             )
+            .animation(progressAnimation, value: currentIndex)
 
             Button {
                 Task { @MainActor in await advance() }

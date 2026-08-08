@@ -42,6 +42,7 @@ public struct OnboardingWrapper<Content: View, CustomStepContent: View>: View {
     private let whatsNewSteps: [OnboardingStep]
     private let tint: Color
     private let progressStyle: OnboardingProgressStyle
+    private let animationConfiguration: OnboardingAnimationConfiguration
     private let copy: OnboardingCopy
     private let onComplete: (@MainActor @Sendable () async -> Void)?
     private let onSkip: (@MainActor @Sendable (String) async -> Void)?
@@ -54,6 +55,7 @@ public struct OnboardingWrapper<Content: View, CustomStepContent: View>: View {
         currentVersion: String,
         tint: Color = .blue,
         progressStyle: OnboardingProgressStyle = .dots,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
         copy: OnboardingCopy = .default,
         presentation: Binding<OnboardingPresentation?> = .constant(nil),
         onComplete: (@MainActor @Sendable () async -> Void)? = nil,
@@ -68,6 +70,7 @@ public struct OnboardingWrapper<Content: View, CustomStepContent: View>: View {
         self.currentVersion = currentVersion
         self.tint = tint
         self.progressStyle = progressStyle
+        self.animationConfiguration = animationConfiguration
         self.copy = copy
         self._presentation = presentation
         self.onComplete = onComplete
@@ -100,6 +103,7 @@ public struct OnboardingWrapper<Content: View, CustomStepContent: View>: View {
             tint: tint,
             copy: copy,
             progressStyle: progressStyle,
+            animationConfiguration: animationConfiguration,
             onComplete: completeFlow,
             onCancel: onCancel == nil ? nil : cancelFlow,
             onSkip: onSkip,
@@ -186,6 +190,7 @@ public extension OnboardingWrapper where CustomStepContent == EmptyView {
         currentVersion: String,
         tint: Color = .blue,
         progressStyle: OnboardingProgressStyle = .dots,
+        animationConfiguration: OnboardingAnimationConfiguration = .default,
         copy: OnboardingCopy = .default,
         presentation: Binding<OnboardingPresentation?> = .constant(nil),
         onComplete: (@MainActor @Sendable () async -> Void)? = nil,
@@ -200,6 +205,7 @@ public extension OnboardingWrapper where CustomStepContent == EmptyView {
             currentVersion: currentVersion,
             tint: tint,
             progressStyle: progressStyle,
+            animationConfiguration: animationConfiguration,
             copy: copy,
             presentation: presentation,
             onComplete: onComplete,

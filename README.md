@@ -77,6 +77,91 @@ OnboardingFlow(
 
 If a custom step has no matching content, the flow safely renders an empty body and keeps the standard header and controls.
 
+## Customize step animations
+
+OnboardingKit uses polished directional step animations by default, so existing flows do not need any animation setup.
+
+```swift
+OnboardingFlow {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "A quick intro.",
+        systemImage: "sparkles"
+    )
+    OnboardingStep.features(
+        id: "features",
+        title: "What's Included",
+        features: [.init(title: "Fast setup", systemImage: "bolt")]
+    )
+}
+```
+
+Use `OnboardingAnimationConfiguration` when your app needs different motion. This fade-only configuration keeps step changes subtle and disables progress animation.
+
+```swift
+let fadeOnlyAnimation = OnboardingAnimationConfiguration(
+    animation: .easeInOut(duration: 0.2),
+    forwardTransition: .opacity,
+    backwardTransition: .opacity,
+    reduceMotionTransition: .opacity,
+    animatesProgress: false
+)
+
+OnboardingFlow(animationConfiguration: fadeOnlyAnimation) {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "A quick intro.",
+        systemImage: "sparkles"
+    )
+}
+```
+
+For a slower slide, provide separate forward and backward transitions.
+
+```swift
+let slowSlideAnimation = OnboardingAnimationConfiguration(
+    animation: .easeInOut(duration: 0.55),
+    forwardTransition: .asymmetric(
+        insertion: .move(edge: .trailing).combined(with: .opacity),
+        removal: .move(edge: .leading).combined(with: .opacity)
+    ),
+    backwardTransition: .asymmetric(
+        insertion: .move(edge: .leading).combined(with: .opacity),
+        removal: .move(edge: .trailing).combined(with: .opacity)
+    ),
+    reduceMotionTransition: .opacity,
+    animatesProgress: true
+)
+
+OnboardingWrapper(
+    currentVersion: currentVersion,
+    animationConfiguration: slowSlideAnimation
+) {
+    ContentView()
+} firstLaunchSteps: {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "A quick intro.",
+        systemImage: "sparkles"
+    )
+}
+```
+
+When Reduce Motion is enabled in system accessibility settings, step changes use `reduceMotionTransition` instead of the directional forward or backward transitions.
+
+```swift
+let reducedMotionAwareAnimation = OnboardingAnimationConfiguration(
+    animation: .snappy,
+    forwardTransition: .move(edge: .trailing).combined(with: .opacity),
+    backwardTransition: .move(edge: .leading).combined(with: .opacity),
+    reduceMotionTransition: .opacity,
+    animatesProgress: true
+)
+```
+
 ## Automatic version-aware presentation
 
 `OnboardingWrapper` stores `currentVersion` under `OnboardingManager.storageKey`. It presents first-launch steps when nothing is stored, presents the release flow after a version change, and otherwise shows app content directly.
