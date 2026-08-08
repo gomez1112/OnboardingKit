@@ -8,6 +8,13 @@ import Testing
     #expect(makeSteps().isEmpty)
 }
 
+@Test func builderResolvesArrayExpression() {
+    @OnboardingBuilder
+    func makeSteps() -> [OnboardingStep] { [] }
+
+    #expect(makeSteps().isEmpty)
+}
+
 @Test func builderResolvesConditionalAndRepeatedSteps() {
     let includeFeatures = true
     let repeated = ["one", "two"]
