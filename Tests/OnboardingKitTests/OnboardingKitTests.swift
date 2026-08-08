@@ -1,6 +1,23 @@
 import Testing
 @testable import OnboardingKit
 
+@Test func builderResolvesEmptyBlock() {
+    @OnboardingBuilder
+    func makeSteps() -> [OnboardingStep] { }
+
+    #expect(makeSteps().isEmpty)
+}
+
+@Test func builderParameterSupportsDefaultEmptyClosure() {
+    func makeSteps(
+        @OnboardingBuilder steps: () -> [OnboardingStep] = { [] }
+    ) -> [OnboardingStep] {
+        steps()
+    }
+
+    #expect(makeSteps().isEmpty)
+}
+
 @Test func builderResolvesConditionalAndRepeatedSteps() {
     let includeFeatures = true
     let repeated = ["one", "two"]

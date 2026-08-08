@@ -121,6 +121,7 @@ public struct OnboardingStep: Identifiable, Sendable, Equatable {
 @resultBuilder
 public enum OnboardingBuilder {
     public static func buildExpression(_ expression: OnboardingStep) -> [OnboardingStep] { [expression] }
+    public static func buildBlock() -> [OnboardingStep] { [] }
     public static func buildBlock(_ components: [OnboardingStep]...) -> [OnboardingStep] { components.flatMap { $0 } }
     public static func buildOptional(_ component: [OnboardingStep]?) -> [OnboardingStep] { component ?? [] }
     public static func buildEither(first component: [OnboardingStep]) -> [OnboardingStep] { component }

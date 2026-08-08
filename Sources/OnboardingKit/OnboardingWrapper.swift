@@ -61,7 +61,7 @@ public struct OnboardingWrapper<Content: View, CustomStepContent: View>: View {
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         @ViewBuilder content: () -> Content,
         @OnboardingBuilder firstLaunchSteps: () -> [OnboardingStep],
-        @OnboardingBuilder whatsNewSteps: () -> [OnboardingStep] = { },
+        @OnboardingBuilder whatsNewSteps: () -> [OnboardingStep] = { [] },
         @ViewBuilder customContent: @escaping (OnboardingStep) -> CustomStepContent
     ) {
         self.appName = appName
@@ -193,7 +193,7 @@ public extension OnboardingWrapper where CustomStepContent == EmptyView {
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         @ViewBuilder content: () -> Content,
         @OnboardingBuilder firstLaunchSteps: () -> [OnboardingStep],
-        @OnboardingBuilder whatsNewSteps: () -> [OnboardingStep] = { }
+        @OnboardingBuilder whatsNewSteps: () -> [OnboardingStep] = { [] }
     ) {
         self.init(
             appName: appName,
