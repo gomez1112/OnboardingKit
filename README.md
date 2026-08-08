@@ -1,221 +1,31 @@
 # OnboardingKit
 
-A production-ready, Apple-native SwiftUI onboarding package that automatically chooses between a first-launch walkthrough and a "What's New" feature sheet based on your app version. It is designed for modern SwiftUI apps with clean call sites, sensible defaults, and minimal boilerplate.
-
----
+OnboardingKit is a SwiftUI package for first-launch onboarding, release highlights, and interactive setup. Every experience is built from the same `OnboardingFlow` and `OnboardingStep` APIs.
 
 ## Requirements
-- Swift tools: **Swift 6.2**
-- Platforms (from `Package.swift`): iOS **17+**, macOS **14+**, tvOS **17+**, watchOS **10+**
+
+- Swift 6.2+
+- iOS 26+, macOS 26+, tvOS 26+, or watchOS 26+
 
 ## Installation
-Add **OnboardingKit** using Swift Package Manager:
 
-1. In Xcode: **File → Add Package Dependencies…**
-2. Paste the repository URL and add it to your target(s).
-3. Import the library where needed:
-   ```swift
-   import OnboardingKit
-   import SwiftUI
-   ```
+Add this repository as a Swift Package dependency, then import the library:
 
----
-
-
-## Quick Start (Legacy Wrapper API)
-1) **Create your first-launch pages**
 ```swift
-let pages: [OnboardingPage] = [
-    .init(
-        title: "Welcome",
-        description: "A quick tour to get you started.",
-        systemImage: "sparkles",
-        backgroundColor: .obk_systemBackground,
-        iconColor: .blue
-    ),
-    .init(
-        title: "Stay Organized",
-        description: "Track what matters, effortlessly.",
-        systemImage: "checklist",
-        backgroundColor: .obk_systemBackground,
-        iconColor: .green
-    )
-]
+import OnboardingKit
+import SwiftUI
 ```
 
-2) **Describe what's new for returning users**
-```swift
-let features: [FeatureItem] = [
-    .init(
-        title: "New Dashboard",
-        description: "A cleaner overview with faster access to actions.",
-        systemImage: "rectangle.3.group",
-        backgroundColor: .obk_secondarySystemBackground,
-        iconColor: .blue
-    ),
-    .init(
-        title: "Better Search",
-        description: "Find entries instantly with smarter filtering.",
-        systemImage: "magnifyingglass",
-        backgroundColor: .obk_secondarySystemBackground,
-        iconColor: .purple
-    )
-]
-```
+## Start with a flow
 
-3) **Wrap your root content**
-```swift
-@main
-struct MyApp: App {
-    var body: some Scene {
-        WindowGroup {
-            OnboardingWrapper(
-                currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0",
-                pages: pages,
-                features: features,
-                tint: .blue
-            ) {
-                ContentView()
-            }
-        }
-    }
-}
-```
-
-OnboardingKit uses `OnboardingManager.storageKey` to remember the last seen version. First-time users see the walkthrough; returning users see "What's New" when the version changes.
-
-
-
-## New API Setup (OnboardingFlow)
-Use this setup if you're adopting the new flow-based API. It keeps onboarding structure in one place and supports welcome, feature, and interactive setup steps.
-
-### 1) Create a setup state object
-```swift
-import Observation
-
-@MainActor
-@Observable
-final class OnboardingSetupState {
-    var selectedGoals: Set<String> = []
-    var displayName: String = ""
-
-    var canContinueFromGoals: Bool { !selectedGoals.isEmpty }
-    var canContinueFromName: Bool { !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-}
-```
-
-### 2) Build your onboarding flow
-```swift
-struct AppOnboardingView: View {
-    @State private var setupState = OnboardingSetupState()
-
-    var body: some View {
-        OnboardingFlow(
-            tint: .blue,
-            progressStyle: .dots,
-            onComplete: {
-                await persistOnboardingCompletion()
-            },
-            onSkip: { stepID in
-                await recordSkippedStep(stepID)
-            }
-        ) {
-            OnboardingStep.welcome(
-                id: "welcome",
-                title: "Welcome",
-                subtitle: "A quick introduction to get started.",
-                systemImage: "sparkles"
-            )
-
-            OnboardingStep.features(
-                id: "features",
-                title: "What's New",
-                features: [
-                    .init(title: "Dashboard", systemImage: "rectangle.3.group"),
-                    .init(title: "Smart Search", systemImage: "magnifyingglass")
-                ]
-            )
-
-            OnboardingStep.custom(
-                id: "goals",
-                title: "Choose Your Goals",
-                subtitle: "Pick at least one to continue.",
-                systemImage: "target",
-                isComplete: { setupState.canContinueFromGoals }
-            )
-
-            OnboardingStep.custom(
-                id: "name",
-                title: "Your Name",
-                subtitle: "Tell us what to call you.",
-                systemImage: "person.crop.circle",
-                isComplete: { setupState.canContinueFromName }
-            )
-        } customContent: { step in
-            switch step.id {
-            case "goals":
-                GoalSelectionView(state: setupState)
-            case "name":
-                DisplayNameSetupView(state: setupState)
-            default:
-                EmptyView()
-            }
-        }
-    }
-
-    private func persistOnboardingCompletion() async {
-        // Store completion/version marker in your app
-    }
-
-    private func recordSkippedStep(_ stepID: String) async {
-        // Optional analytics/tracking
-    }
-}
-```
-
-### 3) Present the flow from your app root
-```swift
-@main
-struct MyApp: App {
-    var body: some Scene {
-        WindowGroup {
-            AppOnboardingView()
-        }
-    }
-}
-```
-
-### 4) Keep using wrapper APIs only when needed
-`OnboardingWrapper`, `OnboardingPage`, and `FeatureItem` are still supported for existing integrations, but new implementations should start with `OnboardingFlow`.
-
----
-
-## OnboardingFlow (Recommended)
-`OnboardingFlow` is the primary API for welcome pages, feature walkthroughs, what's-new style summaries, and interactive setup/personalization content in one flow.
-
-- `OnboardingStep.welcome`: simple intro screens
-- `OnboardingStep.features`: feature list screens
-- `OnboardingStep.custom`: app-specific interactive setup screens
-- `OnboardingProgressStyle`: `.dots`, `.fraction`, or `.hidden`
+Welcome and feature flows need only their steps. Completion, cancellation, skipping, copy, tint, progress, and custom content all have sensible defaults.
 
 ```swift
-OnboardingFlow(
-    tint: .blue,
-    progressStyle: .dots,
-    onComplete: {
-        await saveOnboarding()
-    },
-    onCancel: {
-        await cancelOnboarding()
-    },
-    onSkip: { stepID in
-        await recordSkippedStep(stepID)
-    }
-) {
+OnboardingFlow {
     OnboardingStep.welcome(
         id: "welcome",
         title: "Welcome",
-        subtitle: "A simple introduction to the app.",
+        subtitle: "A quick intro.",
         systemImage: "sparkles"
     )
 
@@ -223,263 +33,158 @@ OnboardingFlow(
         id: "features",
         title: "What You Can Do",
         features: [
-            .init(title: "Plan Projects", systemImage: "checklist"),
-            .init(title: "Track Progress", systemImage: "chart.line.uptrend.xyaxis"),
-            .init(title: "Reflect Weekly", systemImage: "arrow.triangle.2.circlepath")
+            .init(title: "Track", systemImage: "checkmark.circle"),
+            .init(title: "Reflect", systemImage: "sun.max")
         ]
+    )
+}
+```
+
+### Add custom setup only when needed
+
+Use `.custom` for interactive app-specific steps. A required step can provide `isComplete` to control when its primary button becomes available, while an optional step displays the skip action. All callbacks support Swift concurrency.
+
+```swift
+OnboardingFlow(
+    tint: .orange,
+    progressStyle: .fraction,
+    onComplete: { await saveOnboarding() },
+    onCancel: { await recordCancellation() },
+    onSkip: { stepID in await recordSkip(stepID) }
+) {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "Let's personalize your experience.",
+        systemImage: "sparkles"
     )
 
     OnboardingStep.custom(
         id: "goals",
         title: "Choose Your Goals",
-        subtitle: "Pick what you want this app to help with.",
-        systemImage: "target",
-        isComplete: { setupState.canContinueFromGoals }
-    )
-
-    OnboardingStep.custom(
-        id: "name",
-        title: "Personalize Your Experience",
-        subtitle: "Tell the app what to call you.",
-        systemImage: "person.crop.circle",
-        isComplete: { setupState.canContinueFromName }
+        isRequired: true,
+        isComplete: { !selectedGoals.isEmpty }
     )
 } customContent: { step in
     switch step.id {
     case "goals":
-        GoalSelectionView(state: setupState)
-    case "name":
-        DisplayNameSetupView(state: setupState)
+        GoalSelectionView(selectedGoals: $selectedGoals)
     default:
         EmptyView()
     }
 }
 ```
 
-`OnboardingWrapper`, `OnboardingPage`, `FeatureItem`, and `OnboardingCopy` remain fully supported for existing first-launch and what’s-new flows.
+If a custom step has no matching content, the flow safely renders an empty body and keeps the standard header and controls.
 
----
+## Automatic version-aware presentation
 
-## Customization
-- **Accent color**: Pass a `tint` to `OnboardingWrapper` (default `.blue`).
-- **Icons**: Use SF Symbols via `systemImage:` or asset names via `image:` on `OnboardingPage` and `FeatureItem`.
-- **Backgrounds**: Apply per-page or per-feature backgrounds; the provided `Color.obk_systemBackground` helpers keep layouts consistent across Apple platforms.
-- **Per-page actions**: Supply `actionTitle` and `action` when constructing `OnboardingPage` to run lightweight tasks (e.g., priming state) before advancing.
-- **NEW — Secondary actions per page**: Add a secondary button (e.g., “Learn More”) on any onboarding page to branch into help, permissions, or demo flows without leaving the walkthrough.
-- **First-launch vs. What’s New**: Customize structure via `pages`/`features`, and customize shared button/header wording with `OnboardingCopy`.
-- **Animation feel**: OnboardingKit ships with a small `OnboardingAnimationConfiguration` that keeps transitions springy and Apple-like by default. Motion-sensitive users get reduced movement automatically via `accessibilityReduceMotion`.
+`OnboardingWrapper` stores `currentVersion` under `OnboardingManager.storageKey`. It presents first-launch steps when nothing is stored, presents the release flow after a version change, and otherwise shows app content directly.
 
-
-### OnboardingCopy Example (New)
-Use `OnboardingCopy` to customize shared labels without editing package internals:
+### First launch
 
 ```swift
-let copy = OnboardingCopy(
-    skipButtonTitle: "Later",
-    nextButtonTitle: "Continue",
-    getStartedButtonTitle: "Start",
-    continueButtonTitle: "Done",
-    whatsNewHeaderTitle: "New in"
-)
-
-OnboardingWrapper(
-    currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
-    pages: pages,
-    features: features,
-    tint: .blue,
-    copy: copy
-) {
+OnboardingWrapper(currentVersion: currentVersion) {
     ContentView()
-}
-```
-
-### Secondary Action Example (Highlight)
-Use secondary actions to let users explore more without interrupting the main flow:
-
-```swift
-let pages: [OnboardingPage] = [
-    .init(
-        title: "Personalize Alerts",
-        description: "Choose which updates matter most to you.",
-        systemImage: "bell.badge",
-        backgroundColor: .obk_systemBackground,
-        iconColor: .orange,
-        actionTitle: "Allow Notifications",
-        action: { /* Request permissions */ },
-        secondaryActionTitle: "Learn More",
-        secondaryAction: { /* Show help content */ }
+} firstLaunchSteps: {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "A quick intro.",
+        systemImage: "sparkles"
     )
-]
-```
-
----
-
-## Advanced Usage
-- **Version strategy**: Provide any string to `currentVersion` (e.g., `"1.2.0 (45)"`) if you want build metadata to trigger the "What's New" sheet.
-- **Manual presentation**: You can trigger onboarding that is already wired into `OnboardingWrapper` by binding to `presentation`.
-
-```swift
-struct SettingsView: View {
-    @State private var presentation: OnboardingPresentation?
-
-    var body: some View {
-        OnboardingWrapper(
-            currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
-            pages: Onboarding.pages,
-            features: Onboarding.features,
-            tint: AppColors.brandAccent,
-            presentation: $presentation
-        ) {
-            RootTabView()
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Show onboarding") {
-                    presentation = .firstLaunch
-                }
-            }
-        }
-    }
+    OnboardingStep.features(
+        id: "features",
+        title: "Get Started",
+        features: [.init(title: "Track progress", systemImage: "chart.line.uptrend.xyaxis")]
+    )
 }
 ```
 
-Use `.whatsNew` to replay the "What's New" sheet for returning users.
-- **Present from settings or any view**: Keep a shared `presentation` binding at the root and pass it into whichever screen should be able to show onboarding.
+### First launch and What's New
+
+Add the second step builder only when the app has release highlights to show:
 
 ```swift
-struct RootView: View {
-    @State private var presentation: OnboardingPresentation?
-
-    var body: some View {
-        OnboardingWrapper(
-            currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0",
-            pages: Onboarding.pages,
-            features: Onboarding.features,
-            tint: AppColors.brandAccent,
-            presentation: $presentation
-        ) {
-            NavigationStack {
-                SettingsView(presentation: $presentation)
-            }
-        }
-    }
-}
-
-struct SettingsView: View {
-    @Binding var presentation: OnboardingPresentation?
-
-    var body: some View {
-        List {
-            Button("Show onboarding", systemImage: "sparkles") {
-                presentation = .firstLaunch
-            }
-
-            Button("Show what's new", systemImage: "sparkles.rectangle.stack") {
-                presentation = .whatsNew
-            }
-        }
-        .navigationTitle("Settings")
-    }
+OnboardingWrapper(currentVersion: currentVersion) {
+    ContentView()
+} firstLaunchSteps: {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "A quick intro.",
+        systemImage: "sparkles"
+    )
+} whatsNewSteps: {
+    OnboardingStep.features(
+        id: "release-highlights",
+        title: "What's New",
+        features: [.init(title: "Faster search", systemImage: "magnifyingglass")]
+    )
 }
 ```
 
-- **Resetting**: Call `OnboardingManager.resetOnboarding()` during development or QA to force onboarding to show on next launch. If you're using `OnboardingWrapper`, this clears the stored version under `OnboardingManager.storageKey`, so the walkthrough appears again when the app restarts.
-- **Testing**: Use `@testable import OnboardingKit` and verify storage interactions; the `storageKey` constant keeps test setup consistent.
-- **Accessibility**: Buttons and indicators include accessibility labels; provide meaningful titles and descriptions so assistive technologies announce helpful context.
+An empty applicable builder does not present a blank sheet: the wrapper records the current version and continues. An empty manually requested flow clears the request without changing stored completion state.
 
----
-
-## Animation Configuration
-
-Onboarding animations no longer rely on globals; each view accepts a lightweight configuration object with sensible defaults:
+### Advanced wrapper
 
 ```swift
-let animationConfig = OnboardingAnimationConfiguration(
-    transitionStyle: .platformSlide,
-    reducedMotionTransitionStyle: .fade,
-    duration: 0.35,
-    springResponse: 0.55,
-    springDampingFraction: 0.82,
-    enableHaptics: true
-)
+@State private var presentation: OnboardingPresentation?
 
-PagedOnboardingView(
-    appName: "Sample",
-    pages: pages,
-    tintColor: .blue,
-    animationConfiguration: animationConfig
-) { /* completion */ }
-```
-
-If users enable **Reduce Motion**, transitions fall back to softer fades and parallax is disabled automatically.
-
-To override animations globally at the wrapper level:
-
-```swift
 OnboardingWrapper(
-    currentVersion: "1.0",
-    pages: pages,
-    features: features,
-    tint: .blue,
-    animationConfiguration: animationConfig
+    appName: "Momenta",
+    currentVersion: currentVersion,
+    tint: .orange,
+    progressStyle: .dots,
+    copy: OnboardingCopy(
+        skipButtonTitle: "Not Now",
+        nextButtonTitle: "Continue",
+        getStartedButtonTitle: "Start"
+    ),
+    presentation: $presentation,
+    onComplete: { await analytics.trackOnboardingCompleted() },
+    onSkip: { stepID in await analytics.trackSkippedStep(stepID) },
+    onCancel: { await analytics.trackCancelled() }
 ) {
     ContentView()
+} firstLaunchSteps: {
+    OnboardingStep.welcome(
+        id: "welcome",
+        title: "Welcome",
+        subtitle: "A quick intro.",
+        systemImage: "sparkles"
+    )
+    OnboardingStep.custom(id: "goals", title: "Choose Your Goals")
+} whatsNewSteps: {
+    OnboardingStep.features(
+        id: "release-highlights",
+        title: "What's New",
+        features: [.init(title: "New insights", systemImage: "lightbulb")]
+    )
+} customContent: { step in
+    switch step.id {
+    case "goals":
+        GoalSelectionView()
+    default:
+        EmptyView()
+    }
 }
 ```
 
-You can also provide different configs when presenting `WelcomeSheetView` or `PagedOnboardingView` directly; all parameters have defaults so existing call sites remain source-compatible.
+Set the binding to `.firstLaunch` or `.whatsNew` to replay either configured flow. Completing any presented flow stores the current version before invoking `onComplete`. Cancelling clears manual presentation without recording completion.
 
----
+## API overview
 
-## Accessibility Checklist
-- **VoiceOver labels**: Supply descriptive `title` and `description` strings so icons and feature rows announce useful context via `accessibilityLabel`.
-- **Dynamic Type**: Preview onboarding at larger content sizes to confirm headers, descriptions, and buttons wrap without clipping. Prefer relative text styles (e.g., `.title`, `.headline`) over fixed point sizes.
-- **Reduce Motion**: Verify animations calm when `accessibilityReduceMotion` is enabled—page transitions, icon scaling, and list slides should switch to static state changes.
-- **Focus/Keyboard navigation**: Ensure the primary and skip/continue buttons gain initial focus when views appear and that non-interactive elements (like page indicators) stay unfocusable.
-- **Regressions**: Re-run this checklist whenever onboarding UI changes, especially when adding new imagery or interactive controls.
+- `OnboardingFlow`: presents a resolved sequence of onboarding steps.
+- `OnboardingStep.welcome`: displays an introduction and icon.
+- `OnboardingStep.features`: displays rows of feature highlights.
+- `OnboardingStep.custom`: embeds app-specific content with optional validation and async actions.
+- `OnboardingProgressStyle`: chooses dots, a fraction, or hidden progress.
+- `OnboardingCopy`: customizes shared control labels.
+- `OnboardingWrapper`: automatically selects first-launch or release steps from the stored app version.
+- `OnboardingPresentation`: manually requests one of the wrapper's configured flows.
+- `OnboardingManager.resetOnboarding()`: clears the stored version for development, QA, or an app-provided reset action.
 
----
+## Accessibility
 
-## FAQ
-**How does OnboardingKit decide what to show?**
-
-- If no version has been stored, `OnboardingWrapper` shows the first-launch pages.
-- If the stored version differs from `currentVersion`, it shows the "What's New" sheet.
-- Otherwise, your content renders without interruption.
-
-**Can users dismiss the sheets?**
-
-- On iOS, both onboarding experiences are non-dismissable by swipe; users complete the flow via the provided buttons.
-
-**How do I localize strings?**
-
-- Provide localized values for titles and descriptions in `OnboardingPage` / `FeatureItem`, and configure shared control/header labels through `OnboardingCopy`.
-
-**Does it work without assets?**
-
-- Yes. Use SF Symbols for a zero-asset setup, or provide asset names if you prefer custom artwork.
-
----
-
-## API Reference Highlights
-- `OnboardingWrapper`: Wrap your root view to automatically present onboarding or "What's New" content based on `currentVersion`.
-- `OnboardingManager.storageKey`: The `UserDefaults` key used to remember the last seen version.
-- `OnboardingManager.resetOnboarding()`: Clears the stored version so onboarding shows again on next launch.
-- `PagedOnboardingView`: Standalone, full onboarding walkthrough with multiple pages.
-- `WelcomeSheetView`: Standalone "What's New" sheet for returning users.
-- `OnboardingPage`: Model describing each onboarding page (title, description, icon, background, optional action).
-- `FeatureItem`: Model describing each feature row in the "What's New" sheet.
-- `OnboardingAnimationConfiguration`: Customize transitions, timing, and haptics to fit your app's feel.
-- `OnboardingCopy`: Centralize shared onboarding labels (Skip/Next/Get Started/Continue/What's New header).
-
----
-
-## Migration Notes
-- **v1 → v2 (DocC-ready)**: Public APIs now include DocC documentation comments for improved discoverability. Existing call sites remain source-compatible.
-- **Custom "What's New" layouts**: If you previously duplicated logic to show release notes, prefer instantiating `WelcomeSheetView` directly so you keep a single source of truth for feature descriptions.
-- **Testing helpers**: Use the shared `OnboardingManager.resetOnboarding()` instead of deleting defaults manually; this keeps behavior consistent with production logic.
-
----
-
-## Contributing
-Issues and pull requests are welcome. Please ensure changes include appropriate documentation updates and stay aligned with the supported platform versions above.
+Use descriptive step and feature titles, verify layouts at accessibility Dynamic Type sizes, and use meaningful SF Symbols or assets. OnboardingKit uses semantic text styles, honors system tint behavior, and keeps decorative imagery out of the accessibility tree.

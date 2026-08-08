@@ -146,7 +146,7 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
-        onComplete: @escaping @MainActor @Sendable () async -> Void,
+        onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
         @OnboardingBuilder steps: () -> [OnboardingStep],
@@ -162,6 +162,29 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         self.steps = resolvedSteps
         self.customContent = customContent
         _currentIndex = State(initialValue: resolvedSteps.indices.contains(initialStepIndex) ? initialStepIndex : 0)
+    }
+
+    /// Creates a flow from an already-resolved collection of steps.
+    public init(
+        steps: [OnboardingStep],
+        tint: Color = .blue,
+        copy: OnboardingCopy = .default,
+        progressStyle: OnboardingProgressStyle = .dots,
+        initialStepIndex: Int = 0,
+        onComplete: @escaping @MainActor @Sendable () async -> Void = {},
+        onCancel: (@MainActor @Sendable () async -> Void)? = nil,
+        onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        @ViewBuilder customContent: @escaping (OnboardingStep) -> CustomStepContent
+    ) {
+        self.tint = tint
+        self.copy = copy
+        self.progressStyle = progressStyle
+        self.onComplete = onComplete
+        self.onCancel = onCancel
+        self.onSkip = onSkip
+        self.steps = steps
+        self.customContent = customContent
+        _currentIndex = State(initialValue: steps.indices.contains(initialStepIndex) ? initialStepIndex : 0)
     }
 
     public var body: some View {
@@ -222,6 +245,56 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
             currentIndex += 1
         }
         isPerformingAction = false
+    }
+}
+
+public extension OnboardingFlow where CustomStepContent == EmptyView {
+    /// Creates a welcome/features flow without requiring a custom-content closure.
+    init(
+        tint: Color = .blue,
+        copy: OnboardingCopy = .default,
+        progressStyle: OnboardingProgressStyle = .dots,
+        initialStepIndex: Int = 0,
+        onComplete: @escaping @MainActor @Sendable () async -> Void = {},
+        onCancel: (@MainActor @Sendable () async -> Void)? = nil,
+        onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        @OnboardingBuilder steps: () -> [OnboardingStep]
+    ) {
+        self.init(
+            steps: steps(),
+            tint: tint,
+            copy: copy,
+            progressStyle: progressStyle,
+            initialStepIndex: initialStepIndex,
+            onComplete: onComplete,
+            onCancel: onCancel,
+            onSkip: onSkip,
+            customContent: { _ in EmptyView() }
+        )
+    }
+
+    /// Creates a flow from resolved steps without custom content.
+    init(
+        steps: [OnboardingStep],
+        tint: Color = .blue,
+        copy: OnboardingCopy = .default,
+        progressStyle: OnboardingProgressStyle = .dots,
+        initialStepIndex: Int = 0,
+        onComplete: @escaping @MainActor @Sendable () async -> Void = {},
+        onCancel: (@MainActor @Sendable () async -> Void)? = nil,
+        onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil
+    ) {
+        self.init(
+            steps: steps,
+            tint: tint,
+            copy: copy,
+            progressStyle: progressStyle,
+            initialStepIndex: initialStepIndex,
+            onComplete: onComplete,
+            onCancel: onCancel,
+            onSkip: onSkip,
+            customContent: { _ in EmptyView() }
+        )
     }
 }
 

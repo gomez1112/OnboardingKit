@@ -13,6 +13,7 @@ public enum OnboardingManager {
     public static let storageKey = "com.onboardingkit.lastSeenVersion"
 
     /// Clears the stored onboarding version so flows show again on next launch.
+    @MainActor
     public static func resetOnboarding() {
         UserDefaults.standard.removeObject(forKey: storageKey)
     }
