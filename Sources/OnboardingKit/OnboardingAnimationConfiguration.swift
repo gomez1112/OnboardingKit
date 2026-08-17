@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Animations and transitions used while navigating between steps.
 public struct OnboardingAnimationConfiguration {
     public var animation: Animation
     public var forwardTransition: AnyTransition

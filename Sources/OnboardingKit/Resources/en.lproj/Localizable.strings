@@ -1,0 +1,8 @@
+"onboarding.skip" = "Skip";
+"onboarding.next" = "Next";
+"onboarding.get-started" = "Get Started";
+"onboarding.back" = "Back";
+"onboarding.cancel" = "Cancel";
+"onboarding.progress" = "%1$lld of %2$lld";
+"onboarding.in-progress" = "In progress";
+"onboarding.progress-label" = "Progress";
