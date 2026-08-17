@@ -1,0 +1,23 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        destination:
+          - 'platform=iOS Simulator,name=iPhone 16 Pro'
+          - 'platform=macOS'
+          - 'platform=visionOS Simulator,name=Apple Vision Pro'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select latest stable Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Build without warnings
+        run: xcodebuild -scheme OnboardingKit -destination '${{ matrix.destination }}' SWIFT_TREAT_WARNINGS_AS_ERRORS=YES build
+      - name: Unit tests
+        if: matrix.destination == 'platform=macOS'
+        run: swift test -Xswiftc -warnings-as-errors

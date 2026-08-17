@@ -1,10 +1,3 @@
-//
-//  OnboardingManager.swift
-//  OnboardingKit
-//
-//  Created by Gerard Gomez on 12/14/25.
-//
-
 import Foundation
 
 /// Utilities for coordinating onboarding storage and resets.
@@ -14,7 +7,8 @@ public enum OnboardingManager {
 
     /// Clears the stored onboarding version so flows show again on next launch.
     @MainActor
-    public static func resetOnboarding() {
-        UserDefaults.standard.removeObject(forKey: storageKey)
+    public static func resetOnboarding(suiteName: String? = nil) {
+        let store = suiteName.flatMap(UserDefaults.init(suiteName:)) ?? .standard
+        store.removeObject(forKey: storageKey)
     }
 }

@@ -1,30 +1,41 @@
+import Foundation
 import SwiftUI
 
+/// The visual treatment used to communicate progress through a flow.
 public enum OnboardingProgressStyle: Sendable, Equatable {
     case dots
     case fraction
     case hidden
 }
 
-private enum OnboardingNavigationDirection {
-    case forward
-    case backward
-}
-
+/// A declarative unit of onboarding content and behavior.
 public struct OnboardingStep: Identifiable, Sendable, Equatable {
+    /// A stable feature row displayed by a feature step.
     public struct Feature: Identifiable, Sendable, Equatable {
-        public let id = UUID()
-        public let title: String
-        public let subtitle: String?
+        private let explicitID: String?
+        public let title: LocalizedStringResource
+        public let subtitle: LocalizedStringResource?
         public let systemImage: String
 
-        public init(title: String, subtitle: String? = nil, systemImage: String) {
+        public var id: String {
+            explicitID ?? "\(String(localized: title))|\(subtitle.map { String(localized: $0) } ?? "")|\(systemImage)"
+        }
+
+        public init(id: String? = nil, title: LocalizedStringResource, subtitle: LocalizedStringResource? = nil, systemImage: String) {
+            explicitID = id
             self.title = title
             self.subtitle = subtitle
             self.systemImage = systemImage
         }
+
+        public static func == (lhs: Self, rhs: Self) -> Bool {
+            String(localized: lhs.title) == String(localized: rhs.title) &&
+                lhs.subtitle.map { String(localized: $0) } == rhs.subtitle.map { String(localized: $0) } &&
+                lhs.systemImage == rhs.systemImage
+        }
     }
 
+    /// The built-in presentation kind for a step.
     public enum Kind: Sendable, Equatable {
         case welcome
         case features
@@ -32,35 +43,33 @@ public struct OnboardingStep: Identifiable, Sendable, Equatable {
     }
 
     public let id: String
-    public let title: String
-    public let subtitle: String?
+    public let title: LocalizedStringResource
+    public let subtitle: LocalizedStringResource?
     public let icon: OnboardingIcon?
     public let kind: Kind
     public let features: [Feature]
     public let isRequired: Bool
-    public let isComplete: (@MainActor @Sendable () -> Bool)?
-    public let beforeAdvance: (@MainActor @Sendable () async -> Void)?
-    public let secondaryActionTitle: String?
+    public let beforeAdvance: (@MainActor @Sendable () async throws -> Void)?
+    public let secondaryActionTitle: LocalizedStringResource?
     public let secondaryAction: (@MainActor @Sendable () async -> Void)?
 
-    public static func welcome(id: String, title: String, subtitle: String, systemImage: String) -> Self {
+    public static func welcome(id: String, title: LocalizedStringResource, subtitle: LocalizedStringResource, systemImage: String) -> Self {
         .init(id: id, title: title, subtitle: subtitle, icon: .system(systemImage), kind: .welcome)
     }
 
-    public static func features(id: String, title: String, subtitle: String? = nil, features: [Feature]) -> Self {
+    public static func features(id: String, title: LocalizedStringResource, subtitle: LocalizedStringResource? = nil, features: [Feature]) -> Self {
         .init(id: id, title: title, subtitle: subtitle, icon: nil, kind: .features, features: features)
     }
 
     public static func custom(
         id: String,
-        title: String,
-        subtitle: String? = nil,
+        title: LocalizedStringResource,
+        subtitle: LocalizedStringResource? = nil,
         systemImage: String? = nil,
         image: String? = nil,
         isRequired: Bool = true,
-        isComplete: (@MainActor @Sendable () -> Bool)? = nil,
-        beforeAdvance: (@MainActor @Sendable () async -> Void)? = nil,
-        secondaryActionTitle: String? = nil,
+        beforeAdvance: (@MainActor @Sendable () async throws -> Void)? = nil,
+        secondaryActionTitle: LocalizedStringResource? = nil,
         secondaryAction: (@MainActor @Sendable () async -> Void)? = nil
     ) -> Self {
         let icon: OnboardingIcon?
@@ -78,7 +87,6 @@ public struct OnboardingStep: Identifiable, Sendable, Equatable {
             icon: icon,
             kind: .custom,
             isRequired: isRequired,
-            isComplete: isComplete,
             beforeAdvance: beforeAdvance,
             secondaryActionTitle: secondaryActionTitle,
             secondaryAction: secondaryAction
@@ -87,15 +95,14 @@ public struct OnboardingStep: Identifiable, Sendable, Equatable {
 
     public init(
         id: String,
-        title: String,
-        subtitle: String? = nil,
+        title: LocalizedStringResource,
+        subtitle: LocalizedStringResource? = nil,
         icon: OnboardingIcon? = nil,
         kind: Kind,
         features: [Feature] = [],
         isRequired: Bool = true,
-        isComplete: (@MainActor @Sendable () -> Bool)? = nil,
-        beforeAdvance: (@MainActor @Sendable () async -> Void)? = nil,
-        secondaryActionTitle: String? = nil,
+        beforeAdvance: (@MainActor @Sendable () async throws -> Void)? = nil,
+        secondaryActionTitle: LocalizedStringResource? = nil,
         secondaryAction: (@MainActor @Sendable () async -> Void)? = nil
     ) {
         self.id = id
@@ -105,7 +112,6 @@ public struct OnboardingStep: Identifiable, Sendable, Equatable {
         self.kind = kind
         self.features = features
         self.isRequired = isRequired
-        self.isComplete = isComplete
         self.beforeAdvance = beforeAdvance
         self.secondaryActionTitle = secondaryActionTitle
         self.secondaryAction = secondaryAction
@@ -113,16 +119,17 @@ public struct OnboardingStep: Identifiable, Sendable, Equatable {
 
     public static func == (lhs: OnboardingStep, rhs: OnboardingStep) -> Bool {
         lhs.id == rhs.id &&
-            lhs.title == rhs.title &&
-            lhs.subtitle == rhs.subtitle &&
+            String(localized: lhs.title) == String(localized: rhs.title) &&
+            lhs.subtitle.map { String(localized: $0) } == rhs.subtitle.map { String(localized: $0) } &&
             lhs.icon == rhs.icon &&
             lhs.kind == rhs.kind &&
             lhs.features == rhs.features &&
             lhs.isRequired == rhs.isRequired &&
-            lhs.secondaryActionTitle == rhs.secondaryActionTitle
+            lhs.secondaryActionTitle.map { String(localized: $0) } == rhs.secondaryActionTitle.map { String(localized: $0) }
     }
 }
 
+/// Builds arrays of onboarding steps with Swift control flow.
 @resultBuilder
 public enum OnboardingBuilder {
     public static func buildExpression(_ expression: OnboardingStep) -> [OnboardingStep] { [expression] }
@@ -135,24 +142,23 @@ public enum OnboardingBuilder {
     public static func buildArray(_ components: [[OnboardingStep]]) -> [OnboardingStep] { components.flatMap { $0 } }
 }
 
+/// Renders and coordinates a sequence of onboarding steps.
 public struct OnboardingFlow<CustomStepContent: View>: View {
-    private let tint: Color
+    private let explicitTint: Color?
     private let copy: OnboardingCopy
     private let progressStyle: OnboardingProgressStyle
     private let animationConfiguration: OnboardingAnimationConfiguration
-    private let steps: [OnboardingStep]
-    private let onComplete: @MainActor @Sendable () async -> Void
     private let onCancel: (@MainActor @Sendable () async -> Void)?
-    private let onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)?
+    @State private var isStepComplete = true
     private let customContent: (OnboardingStep) -> CustomStepContent
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var currentIndex = 0
-    @State private var isPerformingAction = false
-    @State private var navigationDirection: OnboardingNavigationDirection = .forward
+    @Environment(\.tint) private var environmentTint
+    @State private var model: OnboardingFlowModel
+    @AccessibilityFocusState private var focusedStepID: String?
 
     public init(
-        tint: Color = .blue,
+        tint: Color? = nil,
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
@@ -160,26 +166,33 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onStepAppear: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onError: (@MainActor @Sendable (any Error) async -> Void)? = nil,
         @OnboardingBuilder steps: () -> [OnboardingStep],
         @ViewBuilder customContent: @escaping (OnboardingStep) -> CustomStepContent
     ) {
         let resolvedSteps = steps()
-        self.tint = tint
+        Self.assertUniqueIDs(resolvedSteps)
+        explicitTint = tint
         self.copy = copy
         self.progressStyle = progressStyle
         self.animationConfiguration = animationConfiguration
-        self.onComplete = onComplete
         self.onCancel = onCancel
-        self.onSkip = onSkip
-        self.steps = resolvedSteps
         self.customContent = customContent
-        _currentIndex = State(initialValue: resolvedSteps.indices.contains(initialStepIndex) ? initialStepIndex : 0)
+        _model = State(initialValue: OnboardingFlowModel(
+            steps: resolvedSteps,
+            initialStepIndex: initialStepIndex,
+            onComplete: onComplete,
+            onSkip: onSkip,
+            onStepAppear: onStepAppear,
+            onError: onError
+        ))
     }
 
     /// Creates a flow from an already-resolved collection of steps.
     public init(
         steps: [OnboardingStep],
-        tint: Color = .blue,
+        tint: Color? = nil,
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
@@ -187,28 +200,36 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onStepAppear: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onError: (@MainActor @Sendable (any Error) async -> Void)? = nil,
         @ViewBuilder customContent: @escaping (OnboardingStep) -> CustomStepContent
     ) {
-        self.tint = tint
+        Self.assertUniqueIDs(steps)
+        explicitTint = tint
         self.copy = copy
         self.progressStyle = progressStyle
         self.animationConfiguration = animationConfiguration
-        self.onComplete = onComplete
         self.onCancel = onCancel
-        self.onSkip = onSkip
-        self.steps = steps
         self.customContent = customContent
-        _currentIndex = State(initialValue: steps.indices.contains(initialStepIndex) ? initialStepIndex : 0)
+        _model = State(initialValue: OnboardingFlowModel(
+            steps: steps,
+            initialStepIndex: initialStepIndex,
+            onComplete: onComplete,
+            onSkip: onSkip,
+            onStepAppear: onStepAppear,
+            onError: onError
+        ))
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            if let step = activeStep {
+            if let step = model.activeStep {
                 Spacer(minLength: 28)
 
                 VStack(spacing: 24) {
-                    OnboardingStepHeader(step: step, tint: tint)
-                    OnboardingStepBody(step: step, tint: tint, customContent: customContent)
+                    OnboardingStepHeader(step: step, tint: tint, focusedStepID: $focusedStepID)
+                OnboardingStepBody(step: step, tint: tint, customContent: customContent)
+                    .onPreferenceChange(OnboardingStepCompletionPreferenceKey.self) { isStepComplete = $0 }
                 }
                 .frame(maxWidth: 520)
                 .id(step.id)
@@ -221,15 +242,16 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
                     copy: copy,
                     progressStyle: progressStyle,
                     tint: tint,
-                    isLastStep: isLastStep,
-                    isPerformingAction: isPerformingAction,
-                    currentIndex: currentIndex,
-                    totalSteps: max(steps.count, 1),
+                    isLastStep: model.isLastStep,
+                    isPerformingAction: model.isPerformingAction,
+                    currentIndex: model.currentIndex,
+                    totalSteps: max(model.steps.count, 1),
                     progressAnimation: progressAnimation,
-                    onBack: goBack,
+                    isStepComplete: isStepComplete,
+                    onBack: { withAnimation(animationConfiguration.animation) { model.goBack() } },
                     onCancel: onCancel,
-                    onSkip: onSkip,
-                    advance: { await handlePrimaryAction(step: step) }
+                    skip: { await model.skip() },
+                    advance: { await model.handlePrimaryAction(step: step) }
                 )
             } else {
                 ProgressView()
@@ -238,23 +260,21 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 28)
         .padding(.vertical, 20)
+        .task(id: model.currentIndex) {
+            focusedStepID = model.activeStep?.id
+            await model.reportStepAppearance()
+        }
+        .onChange(of: model.currentIndex) { _, _ in isStepComplete = true }
     }
 
-    private var activeStep: OnboardingStep? {
-        guard steps.indices.contains(currentIndex) else { return nil }
-        return steps[currentIndex]
-    }
-
-    private var isLastStep: Bool {
-        currentIndex == steps.count - 1
-    }
+    private var tint: Color { explicitTint ?? environmentTint ?? .accentColor }
 
     private var activeStepTransition: AnyTransition {
         if reduceMotion {
             return animationConfiguration.reduceMotionTransition
         }
 
-        switch navigationDirection {
+        switch model.navigationDirection {
         case .forward:
             return animationConfiguration.forwardTransition
         case .backward:
@@ -266,44 +286,21 @@ public struct OnboardingFlow<CustomStepContent: View>: View {
         animationConfiguration.animatesProgress ? animationConfiguration.animation : nil
     }
 
-    private func goBack() {
-        guard currentIndex > 0 else { return }
-
-        withAnimation(animationConfiguration.animation) {
-            navigationDirection = .backward
-            currentIndex -= 1
+    private static func assertUniqueIDs(_ steps: [OnboardingStep]) {
+#if DEBUG
+        var seen = Set<String>()
+        for step in steps where !seen.insert(step.id).inserted {
+            assertionFailure("Duplicate onboarding step ID: \(step.id)")
         }
+#endif
     }
 
-    private func goForward() {
-        guard currentIndex < steps.count - 1 else { return }
-
-        withAnimation(animationConfiguration.animation) {
-            navigationDirection = .forward
-            currentIndex += 1
-        }
-    }
-
-    @MainActor
-    private func handlePrimaryAction(step: OnboardingStep) async {
-        guard !isPerformingAction else { return }
-        isPerformingAction = true
-        if let beforeAdvance = step.beforeAdvance {
-            await beforeAdvance()
-        }
-        if isLastStep {
-            await onComplete()
-        } else {
-            goForward()
-        }
-        isPerformingAction = false
-    }
 }
 
 public extension OnboardingFlow where CustomStepContent == EmptyView {
     /// Creates a welcome/features flow without requiring a custom-content closure.
     init(
-        tint: Color = .blue,
+        tint: Color? = nil,
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
@@ -311,6 +308,8 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
         onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onStepAppear: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onError: (@MainActor @Sendable (any Error) async -> Void)? = nil,
         @OnboardingBuilder steps: () -> [OnboardingStep]
     ) {
         self.init(
@@ -323,6 +322,8 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
             onComplete: onComplete,
             onCancel: onCancel,
             onSkip: onSkip,
+            onStepAppear: onStepAppear,
+            onError: onError,
             customContent: { _ in EmptyView() }
         )
     }
@@ -330,14 +331,16 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
     /// Creates a flow from resolved steps without custom content.
     init(
         steps: [OnboardingStep],
-        tint: Color = .blue,
+        tint: Color? = nil,
         copy: OnboardingCopy = .default,
         progressStyle: OnboardingProgressStyle = .dots,
         initialStepIndex: Int = 0,
         animationConfiguration: OnboardingAnimationConfiguration = .default,
         onComplete: @escaping @MainActor @Sendable () async -> Void = {},
         onCancel: (@MainActor @Sendable () async -> Void)? = nil,
-        onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil
+        onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onStepAppear: (@MainActor @Sendable (_ stepID: String) async -> Void)? = nil,
+        onError: (@MainActor @Sendable (any Error) async -> Void)? = nil
     ) {
         self.init(
             steps: steps,
@@ -349,6 +352,8 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
             onComplete: onComplete,
             onCancel: onCancel,
             onSkip: onSkip,
+            onStepAppear: onStepAppear,
+            onError: onError,
             customContent: { _ in EmptyView() }
         )
     }
@@ -357,6 +362,7 @@ public extension OnboardingFlow where CustomStepContent == EmptyView {
 private struct OnboardingStepHeader: View {
     let step: OnboardingStep
     let tint: Color
+    var focusedStepID: AccessibilityFocusState<String?>.Binding
 
     var body: some View {
         VStack(spacing: 14) {
@@ -367,10 +373,12 @@ private struct OnboardingStepHeader: View {
 
             VStack(spacing: 8) {
                 Text(step.title)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.largeTitle)
+                    .bold()
                     .multilineTextAlignment(.center)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.78)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityFocused(focusedStepID, equals: step.id)
 
                 if let subtitle = step.subtitle {
                     Text(subtitle)
@@ -450,6 +458,7 @@ private struct OnboardingProgressFooter: View {
     let tint: Color
     let currentIndex: Int
     let total: Int
+    let copy: OnboardingCopy
 
     var body: some View {
         switch progressStyle {
@@ -462,8 +471,11 @@ private struct OnboardingProgressFooter: View {
                         .accessibilityHidden(true)
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(copy.progressAccessibilityLabel))
+            .accessibilityValue(Text(copy.progress(current: currentIndex + 1, total: total)))
         case .fraction:
-            Text("\(currentIndex + 1) of \(total)")
+            Text(copy.progress(current: currentIndex + 1, total: total))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .hidden:
@@ -482,17 +494,20 @@ private struct OnboardingStepControls: View {
     let currentIndex: Int
     let totalSteps: Int
     let progressAnimation: Animation?
+    let isStepComplete: Bool
     let onBack: () -> Void
     let onCancel: (@MainActor @Sendable () async -> Void)?
-    let onSkip: (@MainActor @Sendable (_ stepID: String) async -> Void)?
+    let skip: @MainActor @Sendable () async -> Void
     let advance: @MainActor @Sendable () async -> Void
 
     var body: some View {
         VStack(spacing: 16) {
             HStack(spacing: 16) {
                 if currentIndex > 0 {
-                    Button("Back") { onBack() }
-                        .buttonStyle(.plain)
+                    Button(copy.backButtonTitle) { onBack() }
+                        .buttonStyle(.borderless)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(.rect)
                         .foregroundStyle(tint)
                         .disabled(isPerformingAction)
                 }
@@ -500,10 +515,12 @@ private struct OnboardingStepControls: View {
                 Spacer()
 
                 if let onCancel {
-                    Button("Cancel") {
+                    Button(copy.cancelButtonTitle) {
                         Task { @MainActor in await onCancel() }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.borderless)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(.rect)
                     .foregroundStyle(tint)
                     .disabled(isPerformingAction)
                 }
@@ -515,7 +532,8 @@ private struct OnboardingStepControls: View {
                 progressStyle: progressStyle,
                 tint: tint,
                 currentIndex: currentIndex,
-                total: totalSteps
+                total: totalSteps,
+                copy: copy
             )
             .animation(progressAnimation, value: currentIndex)
 
@@ -537,13 +555,13 @@ private struct OnboardingStepControls: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.capsule)
             .tint(tint)
-            .disabled(isPerformingAction || !(step.isComplete?() ?? true))
+            .accessibilityValue(isPerformingAction ? Text(copy.inProgressAccessibilityValue) : Text(""))
+            .disabled(isPerformingAction || !isStepComplete)
 
             if !step.isRequired {
                 Button(copy.skipButtonTitle) {
                     Task { @MainActor in
-                        await onSkip?(step.id)
-                        await advance()
+                        await skip()
                     }
                 }
                 .disabled(isPerformingAction)
@@ -558,5 +576,17 @@ private struct OnboardingStepControls: View {
             }
         }
         .frame(maxWidth: 420)
+    }
+}
+
+struct OnboardingStepCompletionPreferenceKey: PreferenceKey {
+    static let defaultValue = true
+    static func reduce(value: inout Bool, nextValue: () -> Bool) { value = value && nextValue() }
+}
+
+public extension View {
+    /// Reports whether this custom step's requirements are satisfied.
+    func onboardingStepComplete(_ isComplete: Bool) -> some View {
+        preference(key: OnboardingStepCompletionPreferenceKey.self, value: isComplete)
     }
 }
